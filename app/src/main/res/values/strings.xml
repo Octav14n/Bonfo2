@@ -1,0 +1,29 @@
+<resources>
+    <string name="app_name">Bonfo2</string>
+    <string name="title_activity_settings_main">Settings</string>
+    <string name="permission_file_title">File access permission</string>
+    <string name="permission_file_msg">The app requires file access to list EBooks.</string>
+    <string name="error_cant_open_view_ebook">The selected EBook can not be opened.</string>
+
+    <!-- Preference Titles -->
+    <string name="directory_header">Directories</string>
+
+    <!-- Sync Preferences -->
+    <string name="EpubRefreshTitle">Update EBooks</string>
+    <string name="EPubRefreshInitializing">Initializing …</string>
+    <string name="EPubRefreshActionAbort">Cancel</string>
+    <string name="channel_name">EBook updating</string>
+    <string name="channel_description">All information that occur in regards to updating the EBook list.</string>
+    <string name="pref_dir_header">Directories</string>
+    <string name="pref_dir_add">Add Directory</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_search">Search</string>
+    <string name="search_hint">Search</string>
+    <string name="list_author">by %s</string>
+    <string name="list_clear_msg">
+        No books found.\n
+        Please select the folders containing e-books in the settings.
+    </string>
+    <string name="pref_dir_empty">No folders selected.</string>
+    <string name="action_sort">Sort By</string>
+</resources>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#0E3500</color>
+    <color name="colorPrimaryDark">#0D1900</color>
+    <color name="colorAccent">#D81B60</color>
+
+    <color name="colorBookBackground">#000</color>
+    <color name="colorBookTitle">#BCFFA0</color>
+    <color name="colorBookSubjects">#0C7700</color>
+    <array name="list_strokes">
+        <item>#000</item>
+        <item>#F00</item>
+        <item>#D00</item>
+        <item>#A00</item>
+        <item>#900</item>
+        <item>#700</item>
+        <item>#500</item>
+        <item>#300</item>
+        <item>#100</item>
+    </array>
+    <array name="filter_highlights">
+        <item>#FFCC00</item>
+        <item>#1AFF00</item>
+        <item>#FF00CC</item>
+        <item>#CC00FF</item>
+    </array>
+</resources>

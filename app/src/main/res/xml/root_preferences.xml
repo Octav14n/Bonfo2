@@ -1,0 +1,14 @@
+<PreferenceScreen
+        xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+            app:title="@string/directory_header">
+
+        <eu.schnuff.bonfo2.settings.DirectoriesPreference
+                app:key="watched_directories"
+                android:layout_height="wrap_content" android:layout_width="match_parent"
+                android:layout="@layout/preference_directories"/>
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

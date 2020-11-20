@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        tools:context=".MainActivity"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+    <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            android:elevation="4dp"
+            tools:ignore="UnusedAttribute" app:menu="@menu/menu"/>
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/refresh"
+            android:layout_below="@+id/toolbar">
+        <com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/list"
+                tools:listitem="@layout/list_epub"
+
+                android:clipToPadding="false"
+                android:paddingLeft="?attr/listPreferredItemPaddingLeft"
+                android:paddingRight="?attr/listPreferredItemPaddingRight"
+                android:paddingStart="?attr/listPreferredItemPaddingLeft"
+                android:paddingEnd="?attr/listPreferredItemPaddingRight"
+                android:paddingTop="?attr/listPreferredItemPaddingStart"
+
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                app:fastScrollPopupBgColor="@color/colorAccent"
+                app:fastScrollPopupTextColor="@color/colorPrimary"
+                app:fastScrollThumbColor="@color/colorAccent" app:fastScrollThumbInactiveColor="@color/colorAccent"
+                app:fastScrollAutoHide="false" android:visibility="gone">
+        </com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+    <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" android:id="@+id/listClear"
+            android:gravity="center" android:layout_below="@+id/toolbar">
+        <TextView
+                android:text="@string/list_clear_msg"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/textView3" android:gravity="center"/>
+        <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:gravity="center"
+                style="?android:attr/buttonBarStyle">
+            <Button
+                    android:text="@string/title_activity_settings_main"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:id="@+id/listClearSetting"
+                    android:onClick="startSettings"
+                    style="?android:attr/buttonBarButtonStyle"/>
+            <Button
+                    android:text="@string/action_refresh"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:id="@+id/listClearRefresh"
+                    android:onClick="onRefresh"
+                    style="?android:attr/buttonBarButtonStyle"/>
+        </LinearLayout>
+    </LinearLayout>
+    <ProgressBar
+            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/progressBar" android:visibility="gone"
+            android:layout_below="@+id/toolbar" android:layout_marginTop="-6dp"/>
+</RelativeLayout>

@@ -9,9 +9,9 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.files.folderChooser
+import eu.schnuff.bonfo2.databinding.PreferenceDirectoriesBinding
 import eu.schnuff.bonfo2.helper.Setting
 import eu.schnuff.bonfo2.helper.withFilePermission
-import kotlinx.android.synthetic.main.preference_directories.view.*
 
 class DirectoriesPreference (context: Context, attrs: AttributeSet) : Preference(context, attrs) {
     var onAddListener: (v: View) -> Unit = {}
@@ -19,13 +19,15 @@ class DirectoriesPreference (context: Context, attrs: AttributeSet) : Preference
 
     override fun onBindViewHolder(holder: PreferenceViewHolder) {
         super.onBindViewHolder(holder)
+        val binder = PreferenceDirectoriesBinding.bind(holder.itemView)
+
         val adapter = DirectoriesAdapter(context) {
             val b = it.isEmpty()
-            holder.itemView.pref_dir_empty.visibility = if(b) View.VISIBLE else View.GONE
-            holder.itemView.pref_dir.visibility = if (b) View.GONE else View.VISIBLE
+            binder.prefDirEmpty.visibility = if(b) View.VISIBLE else View.GONE
+            binder.prefDir.visibility = if (b) View.GONE else View.VISIBLE
         }
-        holder.itemView.pref_dir_add ?: TODO("PreferenceDirLister has no ui.")
-        holder.itemView.pref_dir_add.setOnClickListener {
+        binder.prefDirAdd ?: TODO("PreferenceDirLister has no ui.")
+        binder.prefDirAdd.setOnClickListener {
             onAddListener(it)
 
             context.withFilePermission {
@@ -42,7 +44,7 @@ class DirectoriesPreference (context: Context, attrs: AttributeSet) : Preference
                 }
             }
         }
-        val list = holder.itemView.pref_dir
+        val list = binder.prefDir
         list.adapter = adapter
         holder.itemView.visibility = View.VISIBLE
     }

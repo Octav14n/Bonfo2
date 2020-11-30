@@ -7,19 +7,18 @@ import androidx.recyclerview.widget.RecyclerView
 import eu.schnuff.bonfo2.R
 import eu.schnuff.bonfo2.data.ePubItem.EPubItem
 import eu.schnuff.bonfo2.helper.setHighlightedText
-import kotlinx.android.extensions.LayoutContainer
-import kotlinx.android.synthetic.main.list_epub.*
+import eu.schnuff.bonfo2.databinding.ListEpubBinding
 
 
 const val HIGHLIGHT = "<font color='%s'>$1</font>"
 const val STROKE_WIDTH = 8
 
-class BookItem(override val containerView: View, private val onClickListener: (itemIdx: Int) -> Unit = {}) :
+class BookItem(private val containerView: View, private val onClickListener: (itemIdx: Int) -> Unit = {}) :
         RecyclerView.ViewHolder(containerView),
-        View.OnClickListener,
-        LayoutContainer
+        View.OnClickListener
 {
-    private val background = linearLayout.background as GradientDrawable
+    private val binding = ListEpubBinding.bind(containerView)
+    private val background = binding.linearLayout.background as GradientDrawable
     private var boundTo: EPubItem? = null
         set(value) {
             field = value
@@ -40,15 +39,15 @@ class BookItem(override val containerView: View, private val onClickListener: (i
                 )
         }
         if (filter) {
-            listTitle.setHighlightedText(value.title, Filter, HIGHLIGHT_COLOR)
-            listAuthor.setHighlightedText(value.author, Filter, HIGHLIGHT_COLOR, R.string.list_author)
-            listDescription.setHighlightedText(value.description, Filter, HIGHLIGHT_COLOR)
-            listSubjects.setHighlightedText(
+            binding.listTitle.setHighlightedText(value.title, Filter, HIGHLIGHT_COLOR)
+            binding.listAuthor.setHighlightedText(value.author, Filter, HIGHLIGHT_COLOR, R.string.list_author)
+            binding.listDescription.setHighlightedText(value.description, Filter, HIGHLIGHT_COLOR)
+            binding.listSubjects.setHighlightedText(
                 value.genres.union(value.characters.toList()).toTypedArray(),
                 Filter,
                 HIGHLIGHT_COLOR
             )
-            listSize.text = value.size
+            binding.listSize.text = value.size
         }
     }
 

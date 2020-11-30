@@ -23,27 +23,29 @@ import eu.schnuff.bonfo2.data.ePubItem.EPubViewModel
 import eu.schnuff.bonfo2.data.historyItem.ACTION
 import eu.schnuff.bonfo2.data.historyItem.HistoryItem
 import eu.schnuff.bonfo2.data.historyItem.HistoryViewModel
+import eu.schnuff.bonfo2.databinding.ActivityMainBinding
 import eu.schnuff.bonfo2.helper.Setting
 import eu.schnuff.bonfo2.helper.withFilePermission
 import eu.schnuff.bonfo2.list.BookAdapter
 import eu.schnuff.bonfo2.settings.SettingsMain
 import eu.schnuff.bonfo2.update.UpdateService
-import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 import java.lang.Integer.min
 import java.lang.reflect.Method
 
 
 class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, SearchView.OnQueryTextListener, ServiceConnection {
+    private lateinit var binding: ActivityMainBinding
+
     private var updateService: UpdateService? = null
     private val adapter = BookAdapter(
         onClickListener = this::onListItemClick,
         onListChanged = { _, newList ->
             if (newList.isNotEmpty() && !firstListObserved) {
                 firstListObserved = true
-                listClear.visibility = View.GONE
-                list.visibility = View.VISIBLE
-                (list.layoutManager!! as LinearLayoutManager).scrollToPosition(setting.listScrollIdx)
+                binding.listClear.visibility = View.GONE
+                binding.list.visibility = View.VISIBLE
+                (binding.list.layoutManager!! as LinearLayoutManager).scrollToPosition(setting.listScrollIdx)
             }
         }
     )
@@ -55,9 +57,9 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
     private var isRefreshing: Boolean = false
         set(value) {
             field = value
-            refresh.isRefreshing = value
-            progressBar.visibility = if (value) {
-                progressBar.isIndeterminate = true
+            binding.refresh.isRefreshing = value
+            binding.progressBar.visibility = if (value) {
+                binding.progressBar.isIndeterminate = true
                 View.VISIBLE
             } else View.GONE
         }
@@ -94,20 +96,20 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
         }
 
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        setSupportActionBar(toolbar)
+        setContentView(binding.root)
+        setSupportActionBar(binding.toolbar)
 
-        refresh.setOnRefreshListener(this)
+        binding.refresh.setOnRefreshListener(this)
         ePubViewModel.get().observe(this, Observer {
             list -> adapter.submitList(list)
         })
         historyViewModel.get().observe(this, Observer { list -> adapter.lastOpened = list.subList(0, min(2, list.size)).map { it.item } })
-        list.adapter = adapter
+        binding.list.adapter = adapter
     }
 
     override fun onPause() {
         // Save UI user input
-        setting.listScrollIdx = (list.layoutManager!! as LinearLayoutManager).findFirstCompletelyVisibleItemPosition()
+        setting.listScrollIdx = (binding.list.layoutManager!! as LinearLayoutManager).findFirstCompletelyVisibleItemPosition()
         setting.filter = searchView.query.toString()
         super.onPause()
     }
@@ -189,11 +191,11 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
 
             })
             progressMax.observe(this@MainActivity, Observer {
-                progressBar.max = it
+                binding.progressBar.max = it
             })
             progressNow.observe(this@MainActivity, Observer {
-                progressBar.isIndeterminate = false
-                progressBar.progress = it
+                binding.progressBar.isIndeterminate = false
+                binding.progressBar.progress = it
             })
         }
     }

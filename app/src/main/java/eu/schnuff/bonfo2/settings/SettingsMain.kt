@@ -4,14 +4,16 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceFragmentCompat
 import eu.schnuff.bonfo2.R
-import kotlinx.android.synthetic.main.settings_activity.*
+import eu.schnuff.bonfo2.databinding.SettingsActivityBinding
 
 class SettingsMain : AppCompatActivity() {
+    private lateinit var binding: SettingsActivityBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.settings_activity)
-        setSupportActionBar(settingsToolbar)
+        binding = SettingsActivityBinding.inflate(layoutInflater)
+        setSupportActionBar(binding.settingsToolbar)
         supportFragmentManager
             .beginTransaction()
             .replace(R.id.settings, SettingsFragment())

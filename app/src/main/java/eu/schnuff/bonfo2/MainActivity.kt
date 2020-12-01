@@ -79,6 +79,7 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // LateInit Initializations
+        binding = ActivityMainBinding.inflate(layoutInflater)
         BookAdapter.activity = this
         ePubViewModel = EPubViewModel(application)
         historyViewModel = HistoryViewModel(application)
@@ -142,16 +143,19 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu, menu)
-        menu?.also {
-            searchView = it.findItem(R.id.action_search).actionView as SearchView
-            searchView.setOnQueryTextListener(this)
-            val filter = setting.filter
-            if (filter.isNotEmpty()) {
-                searchView.setQuery(filter, false)
-                searchView.isIconified = false
-                searchView.clearFocus()
-            }
+        menu ?: throw IllegalStateException("Menu not found")
+
+        val searchViewMenu = menu.findItem(R.id.action_search)
+        searchView = searchViewMenu.actionView as SearchView
+        searchView.setOnQueryTextListener(this)
+        val filter = setting.filter
+        if (filter.isNotEmpty()) {
+            searchViewMenu.expandActionView()
+            searchView.isIconified = false
+            searchView.setQuery(filter, false)
+            searchView.clearFocus()
         }
+
         return super.onCreateOptionsMenu(menu)
     }
 

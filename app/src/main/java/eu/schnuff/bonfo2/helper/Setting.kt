@@ -11,13 +11,16 @@ class Setting(private val context: Context, onChange: (it: Setting) -> Unit = {}
     private val pref = PreferenceManager.getDefaultSharedPreferences(context)
 
     init {
-        pref.registerOnSharedPreferenceChangeListener { _, _ ->
-            onChange(this)
-        }
+        registerOnChangeListener(onChange)
     }
 
-    val watchedDirectories: Set<String>
-        get() = pref.getStringSet(PREFERENCE_WATCHED_DIRECTORIES, emptySet()).orEmpty()
+    var watchedDirectories: Set<String>
+        get() = pref.getStringSet(PREFERENCE_WATCHED_DIRECTORIES, emptySet()) ?: setOf()
+        set(value) = pref.edit().putStringSet(PREFERENCE_WATCHED_DIRECTORIES, value).apply()
+
+    fun addWatchedDirectory(directory: String) {
+        watchedDirectories = watchedDirectories + directory
+    }
 
     var listScrollIdx: Int
         get() = pref.getInt(PREFERENCE_LIST_SCROLL_IDX, 0)
@@ -26,4 +29,10 @@ class Setting(private val context: Context, onChange: (it: Setting) -> Unit = {}
     var filter: String
         get() = pref.getString(PREFERENCE_LIST_FILTER, "") ?: ""
         set(value) = pref.edit().putString(PREFERENCE_LIST_FILTER, value).apply()
+
+    fun registerOnChangeListener(onChange: (it: Setting) -> Unit) {
+        pref.registerOnSharedPreferenceChangeListener { _, _ ->
+            onChange(this)
+        }
+    }
 }

@@ -7,11 +7,20 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import eu.schnuff.bonfo2.helper.Setting
 
-class DirectoriesAdapter(context: Context, private val onChange: (items: Array<String>) -> Unit): RecyclerView.Adapter<DirectoriesAdapter.ViewHolder>() {
-    private val setting = Setting(context) { notifyDataSetChanged() }
+class DirectoriesAdapter(
+    private val setting: Setting,
+    private val onChange: (items: Array<String>) -> Unit
+): RecyclerView.Adapter<DirectoriesAdapter.ViewHolder>() {
     private val watchedDirectories: Array<String>
-            get() = setting.watchedDirectories.toTypedArray().also(onChange)
+            get() = setting.watchedDirectories.toTypedArray()
 
+    init {
+        setting.registerOnChangeListener {
+            notifyDataSetChanged()
+            onChange(watchedDirectories)
+        }
+        onChange(watchedDirectories)
+    }
     class ViewHolder(private val v: TextView) : RecyclerView.ViewHolder(v) {
         var text: String
             get() = v.text.toString()

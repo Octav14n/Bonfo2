@@ -21,31 +21,29 @@ class DirectoriesPreference (context: Context, attrs: AttributeSet) : Preference
         super.onBindViewHolder(holder)
         val binder = PreferenceDirectoriesBinding.bind(holder.itemView)
 
-        val adapter = DirectoriesAdapter(context) {
+        val adapter = DirectoriesAdapter(setting) {
             val b = it.isEmpty()
             binder.prefDirEmpty.visibility = if(b) View.VISIBLE else View.GONE
             binder.prefDir.visibility = if (b) View.GONE else View.VISIBLE
         }
-        binder.prefDirAdd ?: TODO("PreferenceDirLister has no ui.")
         binder.prefDirAdd.setOnClickListener {
             onAddListener(it)
 
             context.withFilePermission {
                 MaterialDialog(context).show {
                     folderChooser(context, initialDirectory = Environment.getExternalStorageDirectory()) { _, folder ->
-                        Log.d(this@DirectoriesPreference::class.qualifiedName, "folder chooser: %s".format(folder))
-                        persistStringSet(
-                            (getPersistedStringSet(emptySet()) ?: emptySet()).toMutableSet().also { set ->
-                                set.add(folder.absolutePath)
-                            }
-                        )
+                        Log.d(TAG, "folder chooser: $folder")
+                        setting.addWatchedDirectory(folder.absolutePath)
                         adapter.notifyDataSetChanged()
                     }
                 }
             }
         }
-        val list = binder.prefDir
-        list.adapter = adapter
+        binder.prefDir.adapter = adapter
         holder.itemView.visibility = View.VISIBLE
+    }
+
+    companion object {
+        val TAG = this::class.qualifiedName
     }
 }

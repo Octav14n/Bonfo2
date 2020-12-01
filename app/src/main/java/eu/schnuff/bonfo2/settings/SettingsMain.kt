@@ -11,8 +11,8 @@ class SettingsMain : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.settings_activity)
         binding = SettingsActivityBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         setSupportActionBar(binding.settingsToolbar)
         supportFragmentManager
             .beginTransaction()

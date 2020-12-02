@@ -81,12 +81,6 @@ class BookAdapter(
     }
 
     companion object {
-        var activity: Activity? = null
-            set(value) {
-                field = value
-                BookItem.parentActivity = value
-            }
-
         private val DIFF = object : DiffUtil.ItemCallback<EPubItem>() {
             override fun areItemsTheSame(oldItem: EPubItem, newItem: EPubItem): Boolean {
                 return oldItem == newItem

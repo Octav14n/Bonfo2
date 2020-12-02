@@ -1,6 +1,5 @@
 package eu.schnuff.bonfo2.list
 
-import android.app.Activity
 import android.graphics.drawable.GradientDrawable
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
@@ -13,7 +12,7 @@ import eu.schnuff.bonfo2.databinding.ListEpubBinding
 const val HIGHLIGHT = "<font color='%s'>$1</font>"
 const val STROKE_WIDTH = 8
 
-class BookItem(private val containerView: View, private val onClickListener: (itemIdx: Int) -> Unit = {}) :
+class BookItem(containerView: View, private val onClickListener: (itemIdx: Int) -> Unit = {}) :
         RecyclerView.ViewHolder(containerView),
         View.OnClickListener
 {
@@ -88,7 +87,6 @@ class BookItem(private val containerView: View, private val onClickListener: (it
                 field = value
                 instances.forEach { it.redraw(opened = true) }
             }
-        var parentActivity: Activity? = null
         private var HIGHLIGHT_COLOR = emptyArray<Int>()
         private var STROKE_COLOR = emptyArray<Int>()
     }

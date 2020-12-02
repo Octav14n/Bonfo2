@@ -80,7 +80,6 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
     override fun onCreate(savedInstanceState: Bundle?) {
         // LateInit Initializations
         binding = ActivityMainBinding.inflate(layoutInflater)
-        BookAdapter.activity = this
         ePubViewModel = EPubViewModel(application)
         historyViewModel = HistoryViewModel(application)
         setting = Setting(this).also {

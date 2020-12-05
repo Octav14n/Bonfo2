@@ -5,8 +5,9 @@ import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 import eu.schnuff.bonfo2.R
 import eu.schnuff.bonfo2.data.ePubItem.EPubItem
-import eu.schnuff.bonfo2.helper.setHighlightedText
 import eu.schnuff.bonfo2.databinding.ListEpubBinding
+import eu.schnuff.bonfo2.filter.Filter
+import eu.schnuff.bonfo2.filter.setHighlightedText
 
 
 const val HIGHLIGHT = "<font color='%s'>$1</font>"
@@ -38,12 +39,12 @@ class BookItem(containerView: View, private val onClickListener: (itemIdx: Int) 
                 )
         }
         if (filter) {
-            binding.listTitle.setHighlightedText(value.title, Filter, HIGHLIGHT_COLOR)
-            binding.listAuthor.setHighlightedText(value.author, Filter, HIGHLIGHT_COLOR, R.string.list_author)
-            binding.listDescription.setHighlightedText(value.description, Filter, HIGHLIGHT_COLOR)
+            binding.listTitle.setHighlightedText(value.title, Filter!!, HIGHLIGHT_COLOR)
+            binding.listAuthor.setHighlightedText(value.author, Filter!!, HIGHLIGHT_COLOR, R.string.list_author)
+            binding.listDescription.setHighlightedText(value.description, Filter!!, HIGHLIGHT_COLOR)
             binding.listSubjects.setHighlightedText(
                 value.genres.union(value.characters.toList()).toTypedArray(),
-                Filter,
+                Filter!!,
                 HIGHLIGHT_COLOR
             )
             binding.listSize.text = value.size
@@ -77,10 +78,12 @@ class BookItem(containerView: View, private val onClickListener: (itemIdx: Int) 
 
     companion object {
         private val instances = mutableListOf<BookItem>()
-        var Filter: Collection<String> = listOf()
+        internal var Filter: Filter? = null
             set(value) {
                 field = value
-                instances.forEach { it.redraw(filter = true) }
+                value?.addChangeListener {
+                    instances.forEach { it.redraw(filter = true) }
+                }
             }
         var LastOpened: Collection<String> = listOf()
             set(value) {

@@ -1,7 +1,6 @@
 package eu.schnuff.bonfo2.helper
 
-import android.os.Build
-import android.text.Html
+import androidx.core.text.HtmlCompat
 import android.view.View
 import android.widget.TextView
 import eu.schnuff.bonfo2.list.HIGHLIGHT
@@ -15,11 +14,7 @@ fun TextView.setHighlightedText(text: String?, highlighting: Collection<String>,
         val value = highlight(text, highlighting, HIGHLIGHT_COLORS)
         val formatted = if (formattedBy == null) value else context.getString(formattedBy, value)
         val htmlified = formatted.replace("\n", "<br>")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            this.text = Html.fromHtml(htmlified, Html.FROM_HTML_MODE_COMPACT)
-        } else {
-            this.text = Html.fromHtml(htmlified)
-        }
+        this.text = HtmlCompat.fromHtml(htmlified, HtmlCompat.FROM_HTML_MODE_COMPACT)
     }
 }
 fun TextView.setHighlightedText(texts: Array<String>, highlighting: Collection<String>, HIGHLIGHT_COLORS: Array<Int>, formattedBy: Int? = null) {
@@ -29,12 +24,8 @@ fun TextView.setHighlightedText(texts: Array<String>, highlighting: Collection<S
         this.visibility = View.VISIBLE
         val value = highlight(texts, highlighting, HIGHLIGHT_COLORS)
         val formatted = if (formattedBy == null) value else context.getString(formattedBy, value)
-        val htmlified = formatted.replace("\n", "<br>").replace(" ", "&nbsp;")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            this.text = Html.fromHtml(htmlified, Html.FROM_HTML_MODE_COMPACT)
-        } else {
-            this.text = Html.fromHtml(htmlified)
-        }
+        val htmlified = formatted.replace("\n", "<br>")
+        this.text = HtmlCompat.fromHtml(htmlified, HtmlCompat.FROM_HTML_MODE_COMPACT)
     }
 }
 private fun highlight(item: String?, highlighting: Collection<String>, HIGHLIGHT_COLORS: Array<Int>) : String {

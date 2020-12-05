@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="wrap_content"
+              android:layout_height="match_parent" android:orientation="vertical"
+              android:id="@+id/linearLayout2" android:padding="@dimen/dialog_margin">
+    <RadioGroup
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+        <RadioButton
+                android:text="@string/sort_by_cdate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/sortByCreation" android:checked="true"/>
+        <RadioButton
+                android:text="@string/sort_by_adate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/sortByAccess"
+                android:enabled="false"/>
+    </RadioGroup>
+    <View
+            android:id="@+id/divider"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?android:attr/listDivider"
+            android:layout_marginTop="@dimen/dialog_divider" android:layout_marginBottom="@dimen/dialog_divider"/>
+    <androidx.appcompat.widget.SwitchCompat
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:id="@+id/filter_by_small" android:checked="true"
+            android:text="@string/filter_by_small"/>
+    <androidx.appcompat.widget.SwitchCompat
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:id="@+id/filter_show_nsfw"
+            android:text="@string/filter_by_nsfw" android:checked="true"/>
+</LinearLayout>

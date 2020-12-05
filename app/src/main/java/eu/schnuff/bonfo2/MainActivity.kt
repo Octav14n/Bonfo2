@@ -18,6 +18,7 @@ import androidx.lifecycle.Observer
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.appcompat.widget.SearchView
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.afollestad.materialdialogs.utils.MDUtil.getStringArray
 import eu.schnuff.bonfo2.data.ePubItem.EPubItem
 import eu.schnuff.bonfo2.data.ePubItem.EPubViewModel
 import eu.schnuff.bonfo2.data.historyItem.ACTION
@@ -32,10 +33,15 @@ import eu.schnuff.bonfo2.update.UpdateService
 import java.io.File
 import java.lang.Integer.min
 import java.lang.reflect.Method
+import eu.schnuff.bonfo2.dialogs.SortDialog
 
 
 class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, SearchView.OnQueryTextListener, ServiceConnection {
     private lateinit var binding: ActivityMainBinding
+    private lateinit var searchView: SearchView
+    private lateinit var setting: Setting
+    private lateinit var ePubViewModel: EPubViewModel
+    private lateinit var historyViewModel: HistoryViewModel
 
     private var updateService: UpdateService? = null
     private val adapter = BookAdapter(
@@ -50,10 +56,6 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
         }
     )
     private var firstListObserved: Boolean = false
-    private lateinit var searchView: SearchView
-    private lateinit var setting: Setting
-    private lateinit var ePubViewModel: EPubViewModel
-    private lateinit var historyViewModel: HistoryViewModel
     private var isRefreshing: Boolean = false
         set(value) {
             field = value
@@ -98,6 +100,9 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
+
+        applyFilterFromSetting()
+        adapter.filter(setting.filter)
 
         binding.refresh.setOnRefreshListener(this)
         ePubViewModel.get().observe(this, Observer {
@@ -164,7 +169,19 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
     }
 
     private fun showSort() {
+        val dialog = SortDialog() {
+            applyFilterFromSetting()
+        }
+        dialog.show(supportFragmentManager, SORT_DIALOG_TAG)
+    }
 
+    private fun applyFilterFromSetting() {
+        adapter.filter.minFileSize = if (setting.showSmall) -1 else 120 * 1024 * 1024
+        adapter.filter.excludeGenres = if (setting.showNsfw) emptySet() else this.getStringArray(R.array.nsfw_genres).toSet()
+        adapter.sort(when(setting.sortBy) {
+            SortDialog.SortBy.ACCESS -> BookAdapter.SortBy.ACCESS
+            SortDialog.SortBy.CREATION -> BookAdapter.SortBy.CREATION
+        })
     }
 
     override fun onQueryTextSubmit(query: String?): Boolean { return false }
@@ -201,5 +218,9 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
                 binding.progressBar.progress = it
             })
         }
+    }
+
+    companion object {
+        const val SORT_DIALOG_TAG = "sort_dialog_tag"
     }
 }

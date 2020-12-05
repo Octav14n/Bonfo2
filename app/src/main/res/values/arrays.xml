@@ -1,2 +1,6 @@
 <resources>
+    <string-array name="nsfw_genres">
+        <item>nsfw</item>
+        <item>f/m</item>
+    </string-array>
 </resources>

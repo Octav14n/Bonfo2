@@ -8,4 +8,7 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
+    <dimen name="dialog_margin">16dp</dimen>
+    <dimen name="dialog_divider">4dp</dimen>
+
 </resources>

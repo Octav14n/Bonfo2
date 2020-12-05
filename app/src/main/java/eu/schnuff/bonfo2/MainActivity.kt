@@ -109,7 +109,7 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
         ePubViewModel.get().observe(this, Observer {
             list -> adapter.submitList(list)
         })
-        historyViewModel.get().observe(this, Observer { list -> adapter.lastOpened = list.subList(0, min(2, list.size)).map { it.item } })
+        historyViewModel.get().observe(this, Observer { list -> adapter.lastOpened = list.map { it.item } })
         binding.list.adapter = adapter
     }
 

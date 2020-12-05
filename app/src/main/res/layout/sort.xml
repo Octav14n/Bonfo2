@@ -13,8 +13,8 @@
         <RadioButton
                 android:text="@string/sort_by_adate"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:id="@+id/sortByAccess"
-                android:enabled="false"/>
+                android:layout_height="wrap_content"
+                android:id="@+id/sortByAccess" />
     </RadioGroup>
     <com.google.android.material.button.MaterialButtonToggleGroup android:layout_height="wrap_content"
                                                                   android:layout_width="match_parent"

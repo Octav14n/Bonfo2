@@ -10,6 +10,7 @@ import eu.schnuff.bonfo2.data.ePubItem.EPubItem
 import eu.schnuff.bonfo2.filter.Filter
 import eu.schnuff.bonfo2.helper.SortBy
 import eu.schnuff.bonfo2.helper.SortOrder
+import kotlin.math.min
 
 class BookAdapter(
     private val onClickListener: (item: EPubItem) -> Unit = {},
@@ -17,11 +18,14 @@ class BookAdapter(
 ) : ListAdapter<EPubItem, BookItem>(DIFF) {
     val filter = Filter()
     private var originalList: List<EPubItem> = mutableListOf()
-    var lastOpened : Collection<String> = listOf()
+    var lastOpened : List<String> = listOf()
         set(value) {
             if (value == field) return
             field = value
-            BookItem.LastOpened = value
+            BookItem.LastOpened = value.subList(0, min(2, value.size))
+
+            if (sortBy == SortBy.ACCESS)
+                sort(null)
         }
     lateinit var sortBy: SortBy
     lateinit var sortOrder: SortOrder
@@ -73,14 +77,18 @@ class BookAdapter(
         refresh(updateSort = true)
     }
     private fun sort(list: List<EPubItem>?): List<EPubItem> {
-        val newlist = (list ?: originalList).toMutableList()
-        when (sortBy) {
-            SortBy.ACCESS -> newlist.sortBy { lastOpened.indexOf(it.filePath) }
-            SortBy.CREATION -> newlist.sortWith (compareBy(EPubItem::modified))
+        val comparator = when (sortBy) {
+            SortBy.ACCESS -> when (sortOrder) {
+                SortOrder.ASC -> compareByDescending  { val i = lastOpened.indexOf(it.url); if (i==-1) Integer.MAX_VALUE else i }
+                SortOrder.DESC -> compareBy<EPubItem> { val i = lastOpened.indexOf(it.url); if (i==-1) Integer.MAX_VALUE else i }
+            }.then(compareBy(EPubItem::modified))
+            SortBy.CREATION -> when (sortOrder) {
+                SortOrder.ASC -> compareBy(EPubItem::modified)
+                SortOrder.DESC -> compareByDescending(EPubItem::modified)
+            }
         }
-        if (sortOrder == SortOrder.DESC)
-            newlist.reverse()
-        return newlist
+
+        return (list ?: originalList).sortedWith(comparator)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BookItem {

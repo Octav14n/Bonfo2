@@ -9,7 +9,6 @@ import eu.schnuff.bonfo2.databinding.SortBinding
 import eu.schnuff.bonfo2.helper.Setting
 import eu.schnuff.bonfo2.helper.SortBy
 import eu.schnuff.bonfo2.helper.SortOrder
-import kotlin.IllegalStateException
 
 class SortDialog(private val onAcceptListener: (it: SortDialog) -> Unit) : DialogFragment() {
     private lateinit var binding: SortBinding

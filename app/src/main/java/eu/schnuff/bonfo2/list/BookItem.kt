@@ -1,6 +1,5 @@
 package eu.schnuff.bonfo2.list
 
-import android.graphics.drawable.GradientDrawable
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 import eu.schnuff.bonfo2.R

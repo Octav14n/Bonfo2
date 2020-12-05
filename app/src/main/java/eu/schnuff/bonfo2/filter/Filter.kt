@@ -3,7 +3,7 @@ package eu.schnuff.bonfo2.filter
 import android.widget.TextView
 import eu.schnuff.bonfo2.data.ePubItem.EPubItem
 import eu.schnuff.bonfo2.helper.setHighlightedText
-import java.util.Locale
+import java.util.*
 
 class Filter {
     var searchString: String = ""

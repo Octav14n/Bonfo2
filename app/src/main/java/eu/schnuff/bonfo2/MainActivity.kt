@@ -14,10 +14,9 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Observer
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.appcompat.widget.SearchView
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.afollestad.materialdialogs.utils.MDUtil.getStringArray
 import eu.schnuff.bonfo2.data.ePubItem.EPubItem
 import eu.schnuff.bonfo2.data.ePubItem.EPubViewModel
@@ -25,16 +24,13 @@ import eu.schnuff.bonfo2.data.historyItem.ACTION
 import eu.schnuff.bonfo2.data.historyItem.HistoryItem
 import eu.schnuff.bonfo2.data.historyItem.HistoryViewModel
 import eu.schnuff.bonfo2.databinding.ActivityMainBinding
+import eu.schnuff.bonfo2.dialogs.SortDialog
 import eu.schnuff.bonfo2.helper.Setting
 import eu.schnuff.bonfo2.helper.withFilePermission
 import eu.schnuff.bonfo2.list.BookAdapter
 import eu.schnuff.bonfo2.settings.SettingsMain
 import eu.schnuff.bonfo2.update.UpdateService
 import java.io.File
-import java.lang.Integer.min
-import java.lang.reflect.Method
-import eu.schnuff.bonfo2.dialogs.SortDialog
-import eu.schnuff.bonfo2.helper.SortBy
 
 
 class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, SearchView.OnQueryTextListener, ServiceConnection {
@@ -91,8 +87,7 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
         // Disable file uri errors
         if (Build.VERSION.SDK_INT >= 24) {
             try {
-                val m: Method = StrictMode::class.java.getMethod("disableDeathOnFileUriExposure")
-                m.invoke(null)
+                StrictMode::class.java.getMethod("disableDeathOnFileUriExposure").invoke(null)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -106,10 +101,10 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
         adapter.filter(setting.filter)
 
         binding.refresh.setOnRefreshListener(this)
-        ePubViewModel.get().observe(this, Observer {
+        ePubViewModel.get().observe(this, {
             list -> adapter.submitList(list)
         })
-        historyViewModel.get().observe(this, Observer { list -> adapter.lastOpened = list.map { it.item } })
+        historyViewModel.get().observe(this, { list -> adapter.lastOpened = list.map { it.item } })
         binding.list.adapter = adapter
     }
 
@@ -170,7 +165,7 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
     }
 
     private fun showSort() {
-        val dialog = SortDialog() {
+        val dialog = SortDialog {
             applyFilterFromSetting()
         }
         dialog.show(supportFragmentManager, SORT_DIALOG_TAG)
@@ -204,17 +199,16 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
         updateService = (service as? UpdateService.UpdateBinder)?.Service
         updateService?.run {
             isRefreshing = progressing.value ?: false
-            progressing.observe(this@MainActivity, Observer {
+            progressing.observe(this@MainActivity) {
                 isRefreshing = it
-
-            })
-            progressMax.observe(this@MainActivity, Observer {
+            }
+            progressMax.observe(this@MainActivity) {
                 binding.progressBar.max = it
-            })
-            progressNow.observe(this@MainActivity, Observer {
+            }
+            progressNow.observe(this@MainActivity) {
                 binding.progressBar.isIndeterminate = false
                 binding.progressBar.progress = it
-            })
+            }
         }
     }
 

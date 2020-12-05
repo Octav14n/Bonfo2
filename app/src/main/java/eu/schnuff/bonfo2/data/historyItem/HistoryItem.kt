@@ -1,6 +1,8 @@
 package eu.schnuff.bonfo2.data.historyItem
 
-import androidx.room.*
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.PrimaryKey
 import eu.schnuff.bonfo2.data.ePubItem.EPubItem
 import java.util.*
 

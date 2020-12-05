@@ -10,7 +10,6 @@ import eu.schnuff.bonfo2.data.ePubItem.EPubItem
 import eu.schnuff.bonfo2.filter.Filter
 import eu.schnuff.bonfo2.helper.SortBy
 import eu.schnuff.bonfo2.helper.SortOrder
-import kotlin.math.min
 
 class BookAdapter(
     private val onClickListener: (item: EPubItem) -> Unit = {},

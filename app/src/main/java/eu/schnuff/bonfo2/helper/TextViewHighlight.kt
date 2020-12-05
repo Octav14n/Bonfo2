@@ -1,8 +1,8 @@
 package eu.schnuff.bonfo2.helper
 
-import androidx.core.text.HtmlCompat
 import android.view.View
 import android.widget.TextView
+import androidx.core.text.HtmlCompat
 import eu.schnuff.bonfo2.list.HIGHLIGHT
 
 

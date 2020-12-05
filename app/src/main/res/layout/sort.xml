@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="wrap_content"
+              xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="wrap_content"
               android:layout_height="match_parent" android:orientation="vertical"
               android:id="@+id/linearLayout2" android:padding="@dimen/dialog_margin">
     <RadioGroup
@@ -16,6 +16,25 @@
                 android:layout_height="wrap_content" android:id="@+id/sortByAccess"
                 android:enabled="false"/>
     </RadioGroup>
+    <com.google.android.material.button.MaterialButtonToggleGroup android:layout_height="wrap_content"
+                                                                  android:layout_width="match_parent"
+                                                                  app:singleSelection="true"
+                                                                  app:selectionRequired="true"
+                                                                  android:id="@+id/sort_order"
+                                                                  app:checkedButton="@+id/sort_dsc">
+        <com.google.android.material.button.MaterialButton
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/sort_dsc"
+                android:layout_weight="1" android:id="@+id/sortDesc"/>
+        <com.google.android.material.button.MaterialButton
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/sort_asc"
+                android:id="@+id/sortAsc" android:layout_weight="1"/>
+    </com.google.android.material.button.MaterialButtonToggleGroup>
     <View
             android:id="@+id/divider"
             android:layout_width="match_parent"

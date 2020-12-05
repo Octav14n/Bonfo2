@@ -2,11 +2,11 @@ package eu.schnuff.bonfo2.helper
 
 import android.content.Context
 import androidx.preference.PreferenceManager
-import eu.schnuff.bonfo2.dialogs.SortDialog
 
 private const val PREFERENCE_WATCHED_DIRECTORIES = "watched_directories"
 private const val PREFERENCE_LIST_SCROLL_IDX = "list_first_item_idx"
 private const val PREFERENCE_LIST_FILTER = "list_filter"
+private const val PREFERENCE_SORT_ORDER = "sort_order"
 private const val PREFERENCE_SORT_BY_FILTER = "sort_by_filter"
 private const val PREFERENCE_SHOW_SMALL_FILTER = "show_small_filter"
 private const val PREFERENCE_SHOW_NSFW_FILTER = "show_nsfw_filter"
@@ -35,9 +35,13 @@ class Setting(context: Context, onChange: (it: Setting) -> Unit = {}) {
         get() = pref.getString(PREFERENCE_LIST_FILTER, "") ?: ""
         set(value) = pref.edit().putString(PREFERENCE_LIST_FILTER, value).apply()
 
-    var sortBy: SortDialog.SortBy
-        get() = SortDialog.SortBy.valueOf(pref.getString(PREFERENCE_SORT_BY_FILTER, SortDialog.SortBy.CREATION.name) ?: SortDialog.SortBy.CREATION.name)
+    var sortBy: SortBy
+        get() = SortBy.valueOf(pref.getString(PREFERENCE_SORT_BY_FILTER, SortBy.CREATION.name) ?: SortBy.CREATION.name)
         set(value) = pref.edit().putString(PREFERENCE_SORT_BY_FILTER, value.name).apply()
+
+    var sortOrder: SortOrder
+        get() = SortOrder.valueOf(pref.getString(PREFERENCE_SORT_ORDER, SortOrder.DESC.name) ?: SortOrder.DESC.name)
+        set(value) = pref.edit().putString(PREFERENCE_SORT_ORDER, value.name).apply()
 
     var showSmall: Boolean
         get() = pref.getBoolean(PREFERENCE_SHOW_SMALL_FILTER, true)

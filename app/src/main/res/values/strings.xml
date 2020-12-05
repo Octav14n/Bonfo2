@@ -29,6 +29,8 @@
     <string name="action_sort_apply">Apply</string>
     <string name="sort_by_cdate">Creation Date</string>
     <string name="sort_by_adate">Last Access</string>
+    <string name="sort_asc">asc</string>
+    <string name="sort_dsc">dsc</string>
     <string name="filter_by_small">Show small files</string>
     <string name="filter_by_nsfw">Show NSFW content</string>
 </resources>

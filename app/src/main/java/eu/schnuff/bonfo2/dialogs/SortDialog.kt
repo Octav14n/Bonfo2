@@ -1,13 +1,14 @@
 package eu.schnuff.bonfo2.dialogs
 
 import android.app.Dialog
-import android.content.DialogInterface
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
 import eu.schnuff.bonfo2.R
 import eu.schnuff.bonfo2.databinding.SortBinding
 import eu.schnuff.bonfo2.helper.Setting
+import eu.schnuff.bonfo2.helper.SortBy
+import eu.schnuff.bonfo2.helper.SortOrder
 import kotlin.IllegalStateException
 
 class SortDialog(private val onAcceptListener: (it: SortDialog) -> Unit) : DialogFragment() {
@@ -22,6 +23,12 @@ class SortDialog(private val onAcceptListener: (it: SortDialog) -> Unit) : Dialo
     get() = binding.filterBySmall.isChecked
     val showNsfw
     get() = binding.filterShowNsfw.isChecked
+    val sortOrder
+    get() = when (binding.sortOrder.checkedButtonId) {
+        binding.sortAsc.id -> SortOrder.ASC
+        binding.sortDesc.id -> SortOrder.DESC
+        else -> throw IllegalStateException("Neither ASC nor DESC was selected.")
+    }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return activity?.let {
@@ -48,18 +55,19 @@ class SortDialog(private val onAcceptListener: (it: SortDialog) -> Unit) : Dialo
             SortBy.CREATION -> binding.sortByCreation.isChecked = true
             SortBy.ACCESS -> binding.sortByAccess.isChecked = true
         }
+        binding.sortOrder.check(when (s.sortOrder) {
+            SortOrder.ASC -> binding.sortAsc.id
+            SortOrder.DESC -> binding.sortDesc.id
+        })
         binding.filterBySmall.isChecked = s.showSmall
         binding.filterShowNsfw.isChecked = s.showNsfw
     }
 
     private fun setSettingsFromState(binding: SortBinding, s: Setting) {
         s.sortBy = sortBy
+        s.sortOrder = sortOrder
         s.showSmall = showSmall
         s.showNsfw = showNsfw
     }
 
-    enum class SortBy {
-        CREATION,
-        ACCESS
-    }
 }

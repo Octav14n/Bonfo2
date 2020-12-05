@@ -8,6 +8,8 @@ import androidx.recyclerview.widget.ListAdapter
 import eu.schnuff.bonfo2.R
 import eu.schnuff.bonfo2.data.ePubItem.EPubItem
 import eu.schnuff.bonfo2.filter.Filter
+import eu.schnuff.bonfo2.helper.SortBy
+import eu.schnuff.bonfo2.helper.SortOrder
 
 class BookAdapter(
     private val onClickListener: (item: EPubItem) -> Unit = {},
@@ -21,11 +23,8 @@ class BookAdapter(
             field = value
             BookItem.LastOpened = value
         }
-    var filterSmall
-    get() = filter.minFileSize != -1
-    set(value) {
-        filter.minFileSize = if (value) 120 * 1024 * 1024 else -1
-    }
+    lateinit var sortBy: SortBy
+    lateinit var sortOrder: SortOrder
 
     init {
         filter.addChangeListener {
@@ -37,9 +36,10 @@ class BookAdapter(
     override fun submitList(list: List<EPubItem>?) {
         if (list == null)
             return
-        originalList = list
+        originalList = sort(list)
         refresh(
-            updateFiltered = true
+            updateFiltered = true,
+            updateSort = true
         )
     }
 
@@ -51,9 +51,12 @@ class BookAdapter(
 
     private fun refresh(
         appliedList: List<EPubItem> = currentList,
-        updateFiltered: Boolean = false
+        updateFiltered: Boolean = false,
+        updateSort: Boolean = false
     ) {
-        val list: List<EPubItem> = if (updateFiltered) filter.apply(originalList) else appliedList
+        var list: List<EPubItem> = if (updateFiltered) filter.apply(originalList) else appliedList
+        if (updateSort)
+            list = sort(list)
 
         if (list !== currentList)
             super.submitList(list)
@@ -63,13 +66,21 @@ class BookAdapter(
         this.filter.searchString = filter
     }
 
-    fun sort(by: SortBy) {
-        originalList = originalList.sortedBy {
-            when (by) {
-                SortBy.ACCESS -> TODO()
-                SortBy.CREATION -> it.modified
-            }
+    fun setSort(by: SortBy, order: SortOrder) {
+        sortBy = by
+        sortOrder = order
+        originalList = sort(null)
+        refresh(updateSort = true)
+    }
+    private fun sort(list: List<EPubItem>?): List<EPubItem> {
+        val newlist = (list ?: originalList).toMutableList()
+        when (sortBy) {
+            SortBy.ACCESS -> newlist.sortBy { lastOpened.indexOf(it.filePath) }
+            SortBy.CREATION -> newlist.sortWith (compareBy(EPubItem::modified))
         }
+        if (sortOrder == SortOrder.DESC)
+            newlist.reverse()
+        return newlist
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BookItem {
@@ -82,11 +93,6 @@ class BookAdapter(
 
     override fun onBindViewHolder(holder: BookItem, position: Int) {
         holder.bindTo(getItem(position))
-    }
-
-    enum class SortBy {
-        ACCESS,
-        CREATION
     }
 
     companion object {

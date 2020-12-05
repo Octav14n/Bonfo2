@@ -34,6 +34,7 @@ import java.io.File
 import java.lang.Integer.min
 import java.lang.reflect.Method
 import eu.schnuff.bonfo2.dialogs.SortDialog
+import eu.schnuff.bonfo2.helper.SortBy
 
 
 class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, SearchView.OnQueryTextListener, ServiceConnection {
@@ -178,10 +179,7 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
     private fun applyFilterFromSetting() {
         adapter.filter.minFileSize = if (setting.showSmall) -1 else 120 * 1024 * 1024
         adapter.filter.excludeGenres = if (setting.showNsfw) emptySet() else this.getStringArray(R.array.nsfw_genres).toSet()
-        adapter.sort(when(setting.sortBy) {
-            SortDialog.SortBy.ACCESS -> BookAdapter.SortBy.ACCESS
-            SortDialog.SortBy.CREATION -> BookAdapter.SortBy.CREATION
-        })
+        adapter.setSort(setting.sortBy, setting.sortOrder)
     }
 
     override fun onQueryTextSubmit(query: String?): Boolean { return false }

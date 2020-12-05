@@ -8,17 +8,18 @@ import eu.schnuff.bonfo2.data.ePubItem.EPubItem
 import eu.schnuff.bonfo2.databinding.ListEpubBinding
 import eu.schnuff.bonfo2.filter.Filter
 import eu.schnuff.bonfo2.filter.setHighlightedText
+import kotlin.math.min
 
 
 const val HIGHLIGHT = "<font color='%s'>$1</font>"
 const val STROKE_WIDTH = 8
+const val LIST_MAX_SIZE = 25
 
 class BookItem(containerView: View, private val onClickListener: (itemIdx: Int) -> Unit = {}) :
         RecyclerView.ViewHolder(containerView),
         View.OnClickListener
 {
     private val binding = ListEpubBinding.bind(containerView)
-    private val background = binding.linearLayout.background as GradientDrawable
     private var boundTo: EPubItem? = null
         set(value) {
             field = value
@@ -30,13 +31,17 @@ class BookItem(containerView: View, private val onClickListener: (itemIdx: Int) 
 
         if (opened) {
             val idx = LastOpened.indexOf(value.url)
-            if (idx == -1)
-                background.setStroke(STROKE_WIDTH, STROKE_COLOR[0])
-            else
-                background.setStroke(
-                    STROKE_WIDTH,
-                    STROKE_COLOR[((idx.toFloat() / LastOpened.size) * STROKE_COLOR.size).toInt() + 1]
-                )
+
+            if (idx == -1) {
+                binding.bookCard.cardElevation = 0f
+                //binding.bookCard.strokeWidth = 0
+                //binding.bookCard.strokeColor = STROKE_COLOR[0]
+            } else {
+                binding.bookCard.cardElevation = (LIST_MAX_SIZE - idx).toFloat() // / LastOpened.size
+                //binding.bookCard.strokeWidth = STROKE_WIDTH
+                //binding.bookCard.strokeColor =
+                //    STROKE_COLOR[((idx.toFloat() / LastOpened.size) * STROKE_COLOR.size).toInt() + 1]
+            }
         }
         if (filter) {
             binding.listTitle.setHighlightedText(value.title, Filter!!, HIGHLIGHT_COLOR)
@@ -85,9 +90,9 @@ class BookItem(containerView: View, private val onClickListener: (itemIdx: Int) 
                     instances.forEach { it.redraw(filter = true) }
                 }
             }
-        var LastOpened: Collection<String> = listOf()
+        var LastOpened: List<String> = listOf()
             set(value) {
-                field = value
+                field = value.subList(0, min(LIST_MAX_SIZE, value.size))
                 instances.forEach { it.redraw(opened = true) }
             }
         private var HIGHLIGHT_COLOR = emptyArray<Int>()

@@ -22,7 +22,7 @@ class BookAdapter(
         set(value) {
             if (value == field) return
             field = value
-            BookItem.LastOpened = value.subList(0, min(2, value.size))
+            BookItem.LastOpened = value
 
             if (sortBy == SortBy.ACCESS)
                 sort(null)

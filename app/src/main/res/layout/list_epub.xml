@@ -13,8 +13,7 @@
         android:layout_marginBottom="?attr/listPreferredItemPaddingEnd"
         app:cardCornerRadius="5dp"
         app:cardElevation="0dp"
-        app:cardUseCompatPadding="true"
-
+        app:cardMaxElevation="5dp"
 >
     <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"

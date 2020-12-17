@@ -36,7 +36,7 @@ class BookItem(containerView: View, private val onClickListener: (itemIdx: Int) 
                 //binding.bookCard.strokeWidth = 0
                 //binding.bookCard.strokeColor = STROKE_COLOR[0]
             } else {
-                binding.bookCard.cardElevation = (LIST_MAX_SIZE - idx).toFloat() // / LastOpened.size
+                binding.bookCard.cardElevation = ((LIST_MAX_SIZE - idx).toFloat() / LIST_MAX_SIZE) * binding.bookCard.maxCardElevation
                 //binding.bookCard.strokeWidth = STROKE_WIDTH
                 //binding.bookCard.strokeColor =
                 //    STROKE_COLOR[((idx.toFloat() / LastOpened.size) * STROKE_COLOR.size).toInt() + 1]

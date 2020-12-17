@@ -117,6 +117,8 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
 
     override fun onResume() {
         super.onResume()
+        if (updateService == null)
+            isRefreshing = false
         updateService?.run {
             isRefreshing = progressing.value ?: false
         }

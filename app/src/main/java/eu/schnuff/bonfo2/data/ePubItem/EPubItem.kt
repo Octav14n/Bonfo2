@@ -25,6 +25,8 @@ data class EPubItem(
 ) {
     @Ignore
     val size: String
+    @Ignore
+    val webUrl: String?
 
     init {
         val b = fileSize
@@ -40,6 +42,8 @@ data class EPubItem(
             k > 1 -> "%.2f KB".format(k)
             else -> "%.2f Bytes".format(b)
         }
+
+        webUrl = url.split(", ").filter { it.startsWith("http") }.run { if(this.isEmpty()) null else this[0] }
     }
 
     val name get() = if (fandom !== null) "$fandom - $title" else title

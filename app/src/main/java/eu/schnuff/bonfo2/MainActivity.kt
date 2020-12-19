@@ -13,8 +13,10 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
+import androidx.core.net.toUri
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.afollestad.materialdialogs.utils.MDUtil.getStringArray
@@ -25,6 +27,7 @@ import eu.schnuff.bonfo2.data.historyItem.HistoryItem
 import eu.schnuff.bonfo2.data.historyItem.HistoryViewModel
 import eu.schnuff.bonfo2.databinding.ActivityMainBinding
 import eu.schnuff.bonfo2.dialogs.SortDialog
+import eu.schnuff.bonfo2.filter.Filter
 import eu.schnuff.bonfo2.helper.Setting
 import eu.schnuff.bonfo2.helper.withFilePermission
 import eu.schnuff.bonfo2.list.BookAdapter
@@ -35,6 +38,7 @@ import java.io.File
 
 class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, SearchView.OnQueryTextListener, ServiceConnection {
     private lateinit var binding: ActivityMainBinding
+    private lateinit var searchMenuItem: MenuItem
     private lateinit var searchView: SearchView
     private lateinit var setting: Setting
     private lateinit var ePubViewModel: EPubViewModel
@@ -50,6 +54,33 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
                 binding.list.visibility = View.VISIBLE
                 (binding.list.layoutManager!! as LinearLayoutManager).scrollToPosition(setting.listScrollIdx)
             }
+        },
+        onLongClickListener = { item ->
+            val dialog = AlertDialog.Builder(this).apply {
+                setItems(R.array.actions) { _, i ->
+                    when (i) {
+                        0 -> onListItemClick(item)
+                        1 -> filter = item.author?.replace(Filter.FILTER_SPLITTER, Filter.FILTER_REPLACER) ?: ""
+                        2 -> {
+                            item.webUrl ?: return@setItems
+                            val intent = Intent(Intent.ACTION_VIEW, item.webUrl.toUri())
+                            startActivity(intent)
+                        }
+                        3 -> {
+                            item.webUrl ?: return@setItems
+                            val intent = packageManager.getLaunchIntentForPackage("eu.schnuff.bofilo")?.apply {
+                                action = Intent.ACTION_SEND
+                                putExtra(Intent.EXTRA_TEXT, item.webUrl)
+                                type = "text/plain"
+                                // putExtra(Intent.EXTRA_COMPONENT_NAME, item.fileName)
+                            } ?: return@setItems
+                            startActivity(intent)
+                        }
+                    }
+                }
+            }
+            dialog.create()
+            dialog.show()
         }
     )
     private var firstListObserved: Boolean = false
@@ -62,6 +93,20 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
                 View.VISIBLE
             } else View.GONE
         }
+    private var filter
+        get() = searchView.query.toString()
+        set(value) {
+            if (value.isEmpty()) {
+                searchMenuItem.collapseActionView()
+                searchView.isIconified = true
+            } else {
+                searchMenuItem.expandActionView()
+                searchView.isIconified = false
+                searchView.setQuery(value, false)
+                searchView.clearFocus()
+            }
+        }
+
 
     private fun onListItemClick(it: EPubItem) {
         historyViewModel.insert(HistoryItem(it.url, ACTION.VIEW))
@@ -111,13 +156,13 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
     override fun onPause() {
         // Save UI user input
         setting.listScrollIdx = (binding.list.layoutManager!! as LinearLayoutManager).findFirstCompletelyVisibleItemPosition()
-        setting.filter = searchView.query.toString()
+        setting.filter = filter
         super.onPause()
     }
 
     override fun onResume() {
         super.onResume()
-        if (updateService == null)
+        if (firstListObserved && updateService == null)
             isRefreshing = false
         updateService?.run {
             isRefreshing = progressing.value ?: false
@@ -147,16 +192,10 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
         menuInflater.inflate(R.menu.menu, menu)
         menu ?: throw IllegalStateException("Menu not found")
 
-        val searchViewMenu = menu.findItem(R.id.action_search)
-        searchView = searchViewMenu.actionView as SearchView
+        searchMenuItem = menu.findItem(R.id.action_search)
+        searchView = searchMenuItem.actionView as SearchView
         searchView.setOnQueryTextListener(this)
-        val filter = setting.filter
-        if (filter.isNotEmpty()) {
-            searchViewMenu.expandActionView()
-            searchView.isIconified = false
-            searchView.setQuery(filter, false)
-            searchView.clearFocus()
-        }
+        filter = setting.filter
 
         return super.onCreateOptionsMenu(menu)
     }

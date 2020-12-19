@@ -14,9 +14,14 @@ const val HIGHLIGHT = "<font color='%s'>$1</font>"
 const val STROKE_WIDTH = 8
 const val LIST_MAX_SIZE = 25
 
-class BookItem(containerView: View, private val onClickListener: (itemIdx: Int) -> Unit = {}) :
+class BookItem(
+    containerView: View,
+    private val onClickListener: (itemIdx: Int) -> Unit = {},
+    private val onLongClickListener: (itemIdx: Int) -> Unit = {}
+) :
         RecyclerView.ViewHolder(containerView),
-        View.OnClickListener
+        View.OnClickListener,
+        View.OnLongClickListener
 {
     private val binding = ListEpubBinding.bind(containerView)
     private var boundTo: EPubItem? = null
@@ -58,6 +63,7 @@ class BookItem(containerView: View, private val onClickListener: (itemIdx: Int) 
     init {
         instances.add(this)
         containerView.setOnClickListener(this)
+        containerView.setOnLongClickListener(this)
         if (HIGHLIGHT_COLOR.isEmpty()) {
             val colors = containerView.context.resources.obtainTypedArray(R.array.filter_highlights)
             HIGHLIGHT_COLOR = Array(colors.length()) { colors.getColor(it, 0) }
@@ -78,6 +84,11 @@ class BookItem(containerView: View, private val onClickListener: (itemIdx: Int) 
 
     override fun onClick(v: View?) {
         onClickListener(adapterPosition)
+    }
+
+    override fun onLongClick(v: View?): Boolean {
+        onLongClickListener(adapterPosition)
+        return true
     }
 
     companion object {

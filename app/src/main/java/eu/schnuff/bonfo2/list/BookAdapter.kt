@@ -13,6 +13,7 @@ import eu.schnuff.bonfo2.helper.SortOrder
 
 class BookAdapter(
     private val onClickListener: (item: EPubItem) -> Unit = {},
+    private val onLongClickListener: (item: EPubItem) -> Unit = {},
     private val onListChanged: (previousList: MutableList<EPubItem>, currentList: MutableList<EPubItem>) -> Unit = {_,_->}
 ) : ListAdapter<EPubItem, BookItem>(DIFF) {
     val filter = Filter()
@@ -93,9 +94,11 @@ class BookAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BookItem {
         val bookItemView = LayoutInflater.from(parent.context)
             .inflate(R.layout.list_epub, parent, false) as View
-        return BookItem(bookItemView) {
-            onClickListener(getItem(it))
-        }
+        return BookItem(
+            bookItemView,
+            onClickListener = { onClickListener(getItem(it)) },
+            onLongClickListener = { onLongClickListener(getItem(it)) },
+        )
     }
 
     override fun onBindViewHolder(holder: BookItem, position: Int) {

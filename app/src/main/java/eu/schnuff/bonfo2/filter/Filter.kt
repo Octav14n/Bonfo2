@@ -49,8 +49,8 @@ class Filter {
 
     companion object {
         private const val FILTER_MIN_LENGTH = 3
-        private const val FILTER_SPLITTER = ' '
-        private const val FILTER_REPLACER = '_'
+        const val FILTER_SPLITTER = ' '
+        const val FILTER_REPLACER = '_'
 
         private fun searchFilterFrom(s: String, minStringLength: Int = FILTER_MIN_LENGTH): SearchFilter {
             return when {

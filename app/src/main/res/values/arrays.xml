@@ -3,4 +3,11 @@
         <item>nsfw</item>
         <item>f/m</item>
     </string-array>
+
+    <string-array name="actions">
+        <item>Open</item>
+        <item>Search author</item>
+        <item>Open original</item>
+        <item>Update via BoFiLo</item>
+    </string-array>
 </resources>

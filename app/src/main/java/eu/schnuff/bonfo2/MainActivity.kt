@@ -56,31 +56,23 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
             }
         },
         onLongClickListener = { item ->
-            val dialog = AlertDialog.Builder(this).apply {
-                setItems(R.array.actions) { _, i ->
-                    when (i) {
-                        0 -> onListItemClick(item)
-                        1 -> filter = item.author?.replace(Filter.FILTER_SPLITTER, Filter.FILTER_REPLACER) ?: ""
-                        2 -> {
-                            item.webUrl ?: return@setItems
-                            val intent = Intent(Intent.ACTION_VIEW, item.webUrl.toUri())
-                            startActivity(intent)
-                        }
-                        3 -> {
-                            item.webUrl ?: return@setItems
-                            val intent = packageManager.getLaunchIntentForPackage("eu.schnuff.bofilo")?.apply {
-                                action = Intent.ACTION_SEND
-                                putExtra(Intent.EXTRA_TEXT, item.webUrl)
-                                type = "text/plain"
-                                // putExtra(Intent.EXTRA_COMPONENT_NAME, item.fileName)
-                            } ?: return@setItems
-                            startActivity(intent)
-                        }
+            AlertDialog.Builder(this).apply {
+                setItems(R.array.actions) { _, i -> when (i) {
+                    0 -> onListItemClick(item)
+                    1 -> filter = item.author?.replace(Filter.FILTER_SPLITTER, Filter.FILTER_REPLACER) ?: ""
+                    2 -> item.webUrl?.run { startActivity(Intent(Intent.ACTION_VIEW, toUri())) }
+                    3 -> {
+                        item.webUrl ?: return@setItems
+                        val intent = packageManager.getLaunchIntentForPackage("eu.schnuff.bofilo")?.apply {
+                            action = Intent.ACTION_SEND
+                            putExtra(Intent.EXTRA_TEXT, item.webUrl)
+                            type = "text/plain"
+                            // putExtra(Intent.EXTRA_COMPONENT_NAME, item.fileName)
+                        } ?: return@setItems
+                        startActivity(intent)
                     }
-                }
-            }
-            dialog.create()
-            dialog.show()
+                }}
+            }.show()
         }
     )
     private var firstListObserved: Boolean = false

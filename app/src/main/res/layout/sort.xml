@@ -15,6 +15,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/sortByAccess" />
+        <RadioButton
+            android:text="@string/sort_by_size"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/sortBySize" />
     </RadioGroup>
     <com.google.android.material.button.MaterialButtonToggleGroup android:layout_height="wrap_content"
                                                                   android:layout_width="match_parent"

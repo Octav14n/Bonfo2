@@ -16,6 +16,7 @@ class SortDialog(private val onAcceptListener: (it: SortDialog) -> Unit) : Dialo
     get() = when {
         binding.sortByCreation.isChecked -> SortBy.CREATION
         binding.sortByAccess.isChecked -> SortBy.ACCESS
+        binding.sortBySize.isChecked -> SortBy.SIZE
         else -> throw IllegalStateException("None of the radio-boxes selected.")
     }
     val showSmall
@@ -38,7 +39,7 @@ class SortDialog(private val onAcceptListener: (it: SortDialog) -> Unit) : Dialo
                 setTitle(R.string.action_sort)
                 setView(binding.root)
                 setPositiveButton(R.string.action_sort_apply) { _, _ ->
-                    setSettingsFromState(binding, s)
+                    setSettingsFromState(s)
                     onAcceptListener(this@SortDialog)
                 }
             }
@@ -53,6 +54,7 @@ class SortDialog(private val onAcceptListener: (it: SortDialog) -> Unit) : Dialo
         when (s.sortBy) {
             SortBy.CREATION -> binding.sortByCreation.isChecked = true
             SortBy.ACCESS -> binding.sortByAccess.isChecked = true
+            SortBy.SIZE -> binding.sortBySize.isChecked = true
         }
         binding.sortOrder.check(when (s.sortOrder) {
             SortOrder.ASC -> binding.sortAsc.id
@@ -62,7 +64,7 @@ class SortDialog(private val onAcceptListener: (it: SortDialog) -> Unit) : Dialo
         binding.filterShowNsfw.isChecked = s.showNsfw
     }
 
-    private fun setSettingsFromState(binding: SortBinding, s: Setting) {
+    private fun setSettingsFromState(s: Setting) {
         s.sortBy = sortBy
         s.sortOrder = sortOrder
         s.showSmall = showSmall

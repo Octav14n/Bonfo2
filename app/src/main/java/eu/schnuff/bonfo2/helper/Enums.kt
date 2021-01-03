@@ -2,7 +2,8 @@ package eu.schnuff.bonfo2.helper
 
 enum class SortBy {
     CREATION,
-    ACCESS
+    ACCESS,
+    SIZE
 }
 
 enum class SortOrder {

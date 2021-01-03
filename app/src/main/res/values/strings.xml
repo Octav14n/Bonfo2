@@ -33,4 +33,5 @@
     <string name="sort_dsc">dsc</string>
     <string name="filter_by_small">Show small files</string>
     <string name="filter_by_nsfw">Show NSFW content</string>
+    <string name="sort_by_size">Size</string>
 </resources>

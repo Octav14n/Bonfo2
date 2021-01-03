@@ -10,6 +10,7 @@ import eu.schnuff.bonfo2.data.ePubItem.EPubItem
 import eu.schnuff.bonfo2.filter.Filter
 import eu.schnuff.bonfo2.helper.SortBy
 import eu.schnuff.bonfo2.helper.SortOrder
+import java.util.*
 
 class BookAdapter(
     private val onClickListener: (item: EPubItem) -> Unit = {},
@@ -78,14 +79,14 @@ class BookAdapter(
     }
     private fun sort(list: List<EPubItem>?): List<EPubItem> {
         val comparator = when (sortBy) {
-            SortBy.ACCESS -> when (sortOrder) {
-                SortOrder.ASC -> compareByDescending  { val i = lastOpened.indexOf(it.url); if (i==-1) Integer.MAX_VALUE else i }
-                SortOrder.DESC -> compareBy<EPubItem> { val i = lastOpened.indexOf(it.url); if (i==-1) Integer.MAX_VALUE else i }
-            }.then(compareBy(EPubItem::modified))
-            SortBy.CREATION -> when (sortOrder) {
-                SortOrder.ASC -> compareBy(EPubItem::modified)
-                SortOrder.DESC -> compareByDescending(EPubItem::modified)
-            }
+            SortBy.ACCESS -> compareByDescending  { val i = lastOpened.indexOf(it.url); if (i==-1) Integer.MAX_VALUE else i }
+            SortBy.CREATION -> compareBy(EPubItem::modified)
+            SortBy.SIZE -> compareBy(EPubItem::fileSize)
+        }.then(compareBy(EPubItem::modified)).run {
+            if (sortOrder == SortOrder.DESC)
+                Collections.reverseOrder(this)
+            else
+                this
         }
 
         return (list ?: originalList).sortedWith(comparator)

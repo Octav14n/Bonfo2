@@ -82,12 +82,12 @@ class BookAdapter(
             SortBy.ACCESS -> compareByDescending  { val i = lastOpened.indexOf(it.url); if (i==-1) Integer.MAX_VALUE else i }
             SortBy.CREATION -> compareBy(EPubItem::modified)
             SortBy.SIZE -> compareBy(EPubItem::fileSize)
-        }.then(compareBy(EPubItem::modified)).run {
+        }.run {
             if (sortOrder == SortOrder.DESC)
                 Collections.reverseOrder(this)
             else
                 this
-        }
+        }.then(compareBy(EPubItem::modified))
 
         return (list ?: originalList).sortedWith(comparator)
     }

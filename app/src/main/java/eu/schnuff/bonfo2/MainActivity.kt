@@ -205,7 +205,7 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
     }
 
     private fun applyFilterFromSetting() {
-        adapter.filter.minFileSize = if (setting.showSmall) -1 else 120 * 1024 * 1024
+        adapter.filter.minFileSize = if (setting.showSmall) -1 else setting.minFileSize
         adapter.filter.excludeGenres = if (setting.showNsfw) emptySet() else this.getStringArray(R.array.nsfw_genres).toSet()
         adapter.setSort(setting.sortBy, setting.sortOrder)
     }

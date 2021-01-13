@@ -2,6 +2,17 @@
         xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory
+        android:title="@string/pref_default_header">
+        <EditTextPreference
+            android:layout_width="match_parent"
+
+            android:layout_height="wrap_content"
+            android:defaultValue="120"
+            android:key="min_file_size"
+            android:title="@string/min_file_size_title" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
             app:title="@string/directory_header">
 
         <eu.schnuff.bonfo2.settings.DirectoriesPreference

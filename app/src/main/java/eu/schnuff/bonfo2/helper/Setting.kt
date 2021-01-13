@@ -10,6 +10,7 @@ private const val PREFERENCE_SORT_ORDER = "sort_order"
 private const val PREFERENCE_SORT_BY_FILTER = "sort_by_filter"
 private const val PREFERENCE_SHOW_SMALL_FILTER = "show_small_filter"
 private const val PREFERENCE_SHOW_NSFW_FILTER = "show_nsfw_filter"
+private const val PREFERENCE_MIN_FILE_SIZE = "min_file_size"
 
 class Setting(context: Context, onChange: (it: Setting) -> Unit = {}) {
 
@@ -50,6 +51,10 @@ class Setting(context: Context, onChange: (it: Setting) -> Unit = {}) {
     var showNsfw: Boolean
         get() = pref.getBoolean(PREFERENCE_SHOW_NSFW_FILTER, true)
         set(value) = pref.edit().putBoolean(PREFERENCE_SHOW_NSFW_FILTER, value).apply()
+
+    var minFileSize: Int
+        get() = pref.getString(PREFERENCE_MIN_FILE_SIZE, "120")!!.toInt() * 1024
+        set(value) = pref.edit().putString(PREFERENCE_MIN_FILE_SIZE, (value / 1024).toString()).apply()
 
     fun registerOnChangeListener(onChange: (it: Setting) -> Unit) {
         pref.registerOnSharedPreferenceChangeListener { _, _ ->

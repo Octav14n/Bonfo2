@@ -34,4 +34,6 @@
     <string name="filter_by_small">Show small files</string>
     <string name="filter_by_nsfw">Show NSFW content</string>
     <string name="sort_by_size">Size</string>
+    <string name="pref_default_header">Misc</string>
+    <string name="min_file_size_title">Min file size (kb)</string>
 </resources>

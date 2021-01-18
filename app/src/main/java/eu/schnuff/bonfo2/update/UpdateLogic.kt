@@ -38,6 +38,8 @@ object UpdateLogic {
     private val XPATH_GENRES = XPATH.compile("type/text()|subject[not(starts-with(., 'Last Update') or text() = 'FanFiction')]/text()")
     private val XPATH_CHARACTERS = XPATH.compile("meta[@name='characters']/@content")
     private val XPATH_OPF_FILE_PATH = XPATH.compile("//rootfile/@full-path[1]")
+    private val XPATH_FIRST_PAGE_ID = XPATH.compile("//spine/itemref[1]/@idref")
+    private const val XPATH_FIRST_PAGE_HREF = "//manifest/item[@id='%s']/@href"
     private val DOCUMENT_FACTORY = DocumentBuilderFactory.newInstance()
     private const val UPDATE_INTERVAL_MILLIS = 250
 
@@ -122,9 +124,34 @@ object UpdateLogic {
                 val title = path(meta, XPATH_TITLE) ?: "<No Title>"
                 val author = path(meta, XPATH_AUTHOR)
                 val fandom = path(meta, XPATH_FANDOM)
-                val description = path(meta, XPATH_DESCRIPTION, "\n\n")
+                var description = path(meta, XPATH_DESCRIPTION, "\n\n")
                 val genres = path(meta, XPATH_GENRES)?.split(", ") ?: Collections.emptyList<String>()
                 val characters = path(meta, XPATH_CHARACTERS)?.split(", ") ?: Collections.emptyList<String>()
+
+                if (fandom.isNullOrEmpty() && description.isNullOrBlank() && genres.isNullOrEmpty()) {
+                    Log.d(this::class.simpleName, "${file.name} empty description, read title page")
+                    val titlePageId = XPATH_FIRST_PAGE_ID.evaluate(opf)
+                    val titlePageHrefXPath = XPATH_FIRST_PAGE_HREF.format(titlePageId.replace("'", "\\'"))
+                    val opfDir = opfEntry.name.replaceAfterLast('/', "", "")
+                    val titlePageHref = opfDir + XPATH.evaluate(titlePageHrefXPath, opf)
+                    val titlePage = epub.getEntry(titlePageHref)
+
+                    if (titlePage != null) {
+                        epub.getInputStream(titlePage).reader().use {
+                            val titlePageText = it.readText()
+                            it.close()
+
+                            description =
+                                Regex("<body[^>]*>(.+)</body", RegexOption.DOT_MATCHES_ALL).replace(titlePageText, "$1")
+                                    .replace(Regex("<br[^>]*>"), "\n")
+                                    .replace(Regex("(<[^>]*>)|(^\\W+)|(\\W+$)"), "")
+                                    .replace(Regex("\n(\\s*\n)+"), "\n")
+
+                            Log.d(this::class.simpleName, "\tNew description: $description")
+                        }
+                    } else
+                        Log.d(this::class.simpleName, "\tNo title page found. (ID: $titlePageId, HREF: $titlePageHref [XPATH: $titlePageHrefXPath])")
+                }
 
                 // Log.d("reading-time", System.nanoTime().toString() + " - build EPubItem")
 

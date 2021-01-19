@@ -36,4 +36,7 @@
     <string name="sort_by_size">Size</string>
     <string name="pref_default_header">Misc</string>
     <string name="min_file_size_title">Min file size (kb)</string>
+    <string name="pref_dev_title">Developer</string>
+    <string name="pref_dev_enabled_title">show developer options</string>
+    <string name="pref_dev_items_empty_title">Empty EPub informations</string>
 </resources>

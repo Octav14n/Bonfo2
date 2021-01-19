@@ -28,4 +28,7 @@ interface EPubItemDAO {
 
     @Delete
     fun delete(ePubItems: Collection<EPubItem>)
+
+    @Query("DELETE FROM epubitem")
+    fun devDeleteAll()
 }

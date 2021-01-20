@@ -24,14 +24,11 @@
 
 
     <PreferenceCategory
-        android:title="@string/pref_dev_title">
-        <SwitchPreference
-            android:title="@string/pref_dev_enabled_title"
-            android:key="developer_enabled" />
+        android:title="@string/pref_dev_title"
+        app:initialExpandedChildrenCount="0">
         <Preference
-            android:title="@string/pref_dev_items_empty_title"
             android:key="developer_items_empty"
-            android:dependency="developer_enabled"/>
+            android:title="@string/pref_dev_items_empty_title" />
     </PreferenceCategory>
 
 </PreferenceScreen>

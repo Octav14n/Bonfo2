@@ -27,14 +27,15 @@ class SettingsMain : AppCompatActivity() {
     class SettingsFragment : PreferenceFragmentCompat() {
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             setPreferencesFromResource(R.xml.root_preferences, rootKey)
-            this.findPreference<Preference>("developer_items_empty")!!.setOnPreferenceClickListener {
-                thread {
-                    AppDatabase.getDatabase(requireContext()).ePubItemDao().devDeleteAll()
-                }
-                true
-            }
         }
 
+        override fun onPreferenceTreeClick(preference: Preference?): Boolean {
+            when (preference?.key) {
+                "developer_items_empty" -> thread { AppDatabase.getDatabase(requireContext()).ePubItemDao().devDeleteAll() }
+                else -> return false
+            }
+            return true
+        }
 
     }
 }

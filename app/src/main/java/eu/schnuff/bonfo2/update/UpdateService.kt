@@ -7,13 +7,14 @@ import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import eu.schnuff.bonfo2.MainActivity
 import eu.schnuff.bonfo2.R
 import kotlin.concurrent.thread
 
-class UpdateService : Service() {
+class UpdateService : LifecycleService() {
     private val binder = UpdateBinder(this)
     private val onStopCallback = mutableListOf<() -> Unit>()
 
@@ -26,6 +27,7 @@ class UpdateService : Service() {
     val progressing: LiveData<Boolean> = _progressing
 
     override fun onBind(intent: Intent): IBinder {
+        super.onBind(intent)
         return binder
     }
 
@@ -37,10 +39,10 @@ class UpdateService : Service() {
                 startForegroundService(notification)
                 UpdateLogic.readItems(this,
                     onProgress = { max, now -> startForegroundService(notification, now, max) },
-                    onComplete = this@UpdateService::stopForegroundService
+                    onComplete = { this.stopForegroundService(startId) }
                 )
             }
-            ACTION_ABORT -> stopForegroundService()
+            ACTION_ABORT -> stopForegroundService(startId)
         }
         return super.onStartCommand(intent, flags, startId)
     }
@@ -89,13 +91,13 @@ class UpdateService : Service() {
         return builder
     }
 
-    private fun stopForegroundService() {
+    private fun stopForegroundService(startId: Int) {
         // Stop foreground service and remove the notification.
         _progressing.postValue(false)
 
         stopForeground(true)
         // Stop the foreground service.
-        stopSelf()
+        stopSelf(startId)
     }
 
     private fun createNotificationChannel() {

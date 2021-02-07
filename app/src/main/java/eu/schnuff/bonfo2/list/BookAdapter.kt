@@ -72,8 +72,6 @@ class BookAdapter(
     }
 
     fun setSort(by: SortBy, order: SortOrder) {
-        if (sortBy == by && sortOrder == order)
-            return
         sortBy = by
         sortOrder = order
         originalList = sort(null)

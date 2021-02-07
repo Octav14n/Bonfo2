@@ -152,12 +152,6 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
         super.onPause()
     }
 
-    override fun onResume() {
-        super.onResume()
-        if (updateService == null)
-            isRefreshing = false
-    }
-
     override fun onDestroy() {
         if (updateService != null)
             unbindService(this)

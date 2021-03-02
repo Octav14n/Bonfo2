@@ -5,10 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.os.IBinder
-import android.os.StrictMode
+import android.os.*
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -35,6 +32,7 @@ import eu.schnuff.bonfo2.settings.SettingsMain
 import eu.schnuff.bonfo2.update.UpdateService
 import java.io.File
 
+const val REFRESHING_RESET_TIME = 250L
 
 class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, SearchView.OnQueryTextListener, ServiceConnection {
     private lateinit var binding: ActivityMainBinding
@@ -43,6 +41,7 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
     private lateinit var setting: Setting
     private lateinit var ePubViewModel: EPubViewModel
     private lateinit var historyViewModel: HistoryViewModel
+    private lateinit var refreshingResetHandler: Handler
 
     private var updateService: UpdateService? = null
     private val adapter = BookAdapter(
@@ -78,6 +77,7 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
     private var firstListObserved: Boolean = false
     private var isRefreshing: Boolean = false
         set(value) {
+            if (field == value) return
             field = value
             binding.refresh.isRefreshing = value
             binding.progressBar.visibility = if (value) {
@@ -98,6 +98,9 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
                 searchView.clearFocus()
             }
         }
+    private val refreshingResetRunnable = Runnable {
+        isRefreshing = false
+    }
 
 
     private fun onListItemClick(it: EPubItem) {
@@ -121,6 +124,7 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
         setting = Setting(this).also {
             adapter.filter(it.filter)
         }
+        refreshingResetHandler = Handler(mainLooper)
         // Disable file uri errors
         if (Build.VERSION.SDK_INT >= 24) {
             try {
@@ -150,6 +154,12 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
         setting.listScrollIdx = (binding.list.layoutManager!! as LinearLayoutManager).findFirstCompletelyVisibleItemPosition()
         setting.filter = filter
         super.onPause()
+    }
+
+    override fun onResume() {
+        refreshingResetHandler.removeCallbacks(refreshingResetRunnable)
+        refreshingResetHandler.postDelayed(refreshingResetRunnable, REFRESHING_RESET_TIME)
+        super.onResume()
     }
 
     override fun onDestroy() {
@@ -223,15 +233,24 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
         updateService = (service as? UpdateService.UpdateBinder)?.Service
         updateService?.run {
             isRefreshing = progressing.value ?: false
+            var max = 0
             progressing.observe(this@MainActivity) {
                 isRefreshing = it
             }
             progressMax.observe(this@MainActivity) {
                 binding.progressBar.max = it
+                max = it
             }
             progressNow.observe(this@MainActivity) {
                 binding.progressBar.isIndeterminate = false
                 binding.progressBar.progress = it
+                if (it < max) {
+                    isRefreshing = true
+                    refreshingResetHandler.removeCallbacks(refreshingResetRunnable)
+                    refreshingResetHandler.postDelayed(refreshingResetRunnable, REFRESHING_RESET_TIME)
+                } else {
+                    isRefreshing = false
+                }
             }
         }
     }

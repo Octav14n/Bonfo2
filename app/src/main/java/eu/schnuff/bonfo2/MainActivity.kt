@@ -77,7 +77,6 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
     private var firstListObserved: Boolean = false
     private var isRefreshing: Boolean = false
         set(value) {
-            if (field == value) return
             field = value
             binding.refresh.isRefreshing = value
             binding.progressBar.visibility = if (value) {

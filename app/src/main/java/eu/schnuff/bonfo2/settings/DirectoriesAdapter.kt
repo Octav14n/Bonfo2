@@ -38,9 +38,7 @@ class DirectoriesAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.text = watchedDirectories[position]
         holder.itemView.setOnLongClickListener {
-            val remove = watchedDirectories[position]
-            val listNew = watchedDirectories.filterNot { it == remove }
-            setting.watchedDirectories = listNew.toSet()
+            setting.watchedDirectories = watchedDirectories.filterIndexed { index, _ -> index != position }.toSet()
             true
         }
     }

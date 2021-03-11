@@ -3,6 +3,7 @@ package eu.schnuff.bonfo2.settings
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import eu.schnuff.bonfo2.helper.PREFERENCE
 import eu.schnuff.bonfo2.helper.Setting
 
 class DirectoriesAdapter(
@@ -13,7 +14,7 @@ class DirectoriesAdapter(
             get() = setting.watchedDirectories.toTypedArray()
 
     init {
-        setting.registerOnChangeListener {
+        setting.registerOnChangeListener(PREFERENCE.PREFERENCE_WATCHED_DIRECTORIES) {
             notifyDataSetChanged()
             onChange(watchedDirectories)
         }
@@ -36,6 +37,16 @@ class DirectoriesAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.text = watchedDirectories[position]
+        holder.itemView.setOnLongClickListener {
+            val remove = watchedDirectories[position]
+            val listNew = watchedDirectories.filterNot { it == remove }
+            setting.watchedDirectories = listNew.toSet()
+            true
+        }
+    }
+
+    fun addWatchedDirectory(directory: String) {
+        setting.addWatchedDirectory(directory)
     }
 
     companion object {

@@ -1,7 +1,11 @@
 package eu.schnuff.bonfo2.update
 
 import android.content.Context
+import android.net.Uri
+import android.text.Html
 import android.util.Log
+import androidx.core.net.toUri
+import androidx.documentfile.provider.DocumentFile
 import eu.schnuff.bonfo2.data.AppDatabase
 import eu.schnuff.bonfo2.data.ePubItem.EPubItem
 import eu.schnuff.bonfo2.data.ePubItem.EPubItemDAO
@@ -9,19 +13,23 @@ import eu.schnuff.bonfo2.helper.Setting
 import org.w3c.dom.Node
 import org.w3c.dom.NodeList
 import java.io.BufferedInputStream
-import java.io.File
+import java.io.ByteArrayInputStream
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.PriorityBlockingQueue
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
+import java.util.zip.ZipInputStream
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.xpath.XPathConstants
 import javax.xml.xpath.XPathExpression
 import javax.xml.xpath.XPathFactory
+import kotlin.collections.HashMap
 import kotlin.concurrent.thread
+
+const val DESCRIPTION_MAX_LINES = 30
+const val DESCRIPTION_REDUCE_TO_LINES = 15
 
 object UpdateLogic {
     private const val LARGE_FILE_MIN_SIZE: Long = (1024 shl 1) * 100
@@ -46,13 +54,12 @@ object UpdateLogic {
     fun readItems(context: Context, onComplete: () -> Unit = {}, onProgress: (maxElements: Int, finishedElements: Int) -> Unit = { _, _ -> }) {
         val dao = AppDatabase.getDatabase(context).ePubItemDao()
         val directories = Setting(context).watchedDirectories
-        val queue = PriorityBlockingQueue<File>(200, compareByDescending(File::lastModified))
+        val queue = PriorityBlockingQueue(200, compareByDescending(DocumentFile::lastModified))
 
         val supplier = thread {
             directories.forEach {
-                File(it).walk().forEach {
-                    if (it.extension == "epub")
-                        queue.add(it)
+                DocumentFile.fromTreeUri(context, it.toUri())?.let {
+                    readDirectoryToQueue(context, queue, it)
                 }
             }
         }
@@ -67,11 +74,11 @@ object UpdateLogic {
                     val i = idx.incrementAndGet()
                     onProgress(queue.size + i, i)
                     try {
-                        readEPub(it, others[it.absolutePath], dao)?.run {
-                            others.remove(it.absolutePath)
+                        readEPub(context, it, others[it.uri.toString()], dao)?.run {
+                            others.remove(it.uri.toString())
                         }
                     } catch (e: Exception) {
-                        Log.w("update", "Epub Error (${it.absolutePath}):", e)
+                        Log.w("update", "Epub Error (${it.uri}):", e)
                     }
                 }
             }
@@ -90,99 +97,181 @@ object UpdateLogic {
         onComplete()
     }
 
-    private fun readEPub(file: File, other: EPubItem?, dao: EPubItemDAO): EPubItem? {
+    private fun readDirectoryToQueue(context: Context, queue: Queue<DocumentFile>, dir: DocumentFile) {
+        dir.listFiles().forEach {
+            when {
+                it.isDirectory -> readDirectoryToQueue(context, queue, it)
+                it.isFile && it.name?.endsWith(".epub", true) == true -> queue.add(it)
+            }
+        }
+    }
+
+    private fun readEPub(context: Context, file: DocumentFile, other: EPubItem?, dao: EPubItemDAO): EPubItem? {
         if (other != null && Date(file.lastModified()) == other.modified && file.length() == other.fileSize)
             return other
 
-        ZipFile(file).use { epub ->
-            val opfEntry = findEntry(epub, OPF_EXTENSION, XPATH_OPF_FILE_PATH) ?: return null
-            if (opfEntry.crc == other?.opfCrc) {
-                // The cached file information does not have to be updated
-                val modified = Date(file.lastModified())
-                if (modified != other.modified) {
-                    val item = other.copy(modified = modified)
-                    dao.update(item)
-                    return item
-                }
-                return other
-            }
-            // Log.d("reading", "Now reading " + file.nameWithoutExtension)
-            // Log.d("reading-time", System.nanoTime().toString() + " - open opf")
-            BufferedInputStream(epub.getInputStream(opfEntry)).use { opfStream ->
-                // Log.d("reading-time", System.nanoTime().toString() + " - read opf")
-                val opf = DOCUMENT_FACTORY.newDocumentBuilder().parse(opfStream)
-                opfStream.close()
-                // Log.d("reading-time", System.nanoTime().toString() + " - normalize opf")
-                opf.normalizeDocument()
+        val fileStream = context.contentResolver.openInputStream(file.uri)
+        val zipStream = ZipInputStream(fileStream)
+        var entry: ZipEntry? = zipStream.nextEntry
 
-                // Log.d("reading-time", System.nanoTime().toString() + " - grab meta")
-                val meta  = XPATH_META.evaluate(opf, XPathConstants.NODE) as Node
-                meta.parentNode.removeChild(meta)
+        // Cache file
+        try {
+            val zipMap = HashMap<ZipEntry, ByteArray>()
+            while (entry != null) {
+                val data = zipStream.readBytes()
+                zipMap[entry] = data
+                zipStream.closeEntry()
 
-                // Log.d("reading-time", System.nanoTime().toString() + " - grab meta children")
-                val id = path(meta, XPATH_ID) ?: "file://" + file.canonicalPath
-                val title = path(meta, XPATH_TITLE) ?: "<No Title>"
-                val author = path(meta, XPATH_AUTHOR)
-                val fandom = path(meta, XPATH_FANDOM)
-                var description = path(meta, XPATH_DESCRIPTION, "\n\n")
-                val genres = path(meta, XPATH_GENRES)?.split(", ") ?: Collections.emptyList<String>()
-                val characters = path(meta, XPATH_CHARACTERS)?.split(", ") ?: Collections.emptyList<String>()
+                if (entry.name.endsWith(OPF_EXTENSION, true)) {
+                    return readEntry(entry, data, other, dao, file) {
+                        if (zipMap.keys.any { k -> k.name == it })
+                            return@readEntry zipMap[zipMap.keys.first { k -> k.name == it }]
 
-                if (fandom.isNullOrEmpty() && description.isNullOrBlank() && genres.isNullOrEmpty()) {
-                    Log.d(this::class.simpleName, "${file.name} empty description, read title page")
-                    val titlePageId = XPATH_FIRST_PAGE_ID.evaluate(opf)
-                    val titlePageHrefXPath = XPATH_FIRST_PAGE_HREF.format(titlePageId.replace("'", "\\'"))
-                    val opfDir = opfEntry.name.replaceAfterLast('/', "", "")
-                    val titlePageHref = opfDir + XPATH.evaluate(titlePageHrefXPath, opf)
-                    val titlePage = epub.getEntry(titlePageHref)
+                        var entry2 = entry
+                        while (entry2 != null) {
+                            val data2 = zipStream.readBytes()
+                            zipMap[entry2] = data2
+                            zipStream.closeEntry()
 
-                    if (titlePage != null) {
-                        epub.getInputStream(titlePage).reader().use {
-                            val titlePageText = it.readText()
-                            it.close()
+                            if (entry2.name == it)
+                                return@readEntry data2
 
-                            description =
-                                Regex("<body[^>]*>(.+)</body", RegexOption.DOT_MATCHES_ALL).replace(titlePageText, "$1")
-                                    .replace(Regex("<br[^>]*>"), "\n")
-                                    .replace(Regex("(<[^>]*>)|(^\\W+)|(\\W+$)"), "")
-                                    .replace(Regex("\n(\\s*\n)+"), "\n")
-
-                            Log.d(this::class.simpleName, "\tNew description: $description")
+                            entry2 = zipStream.nextEntry
                         }
-                    } else
-                        Log.d(this::class.simpleName, "\tNo title page found. (ID: $titlePageId, HREF: $titlePageHref [XPATH: $titlePageHrefXPath])")
+
+                        return@readEntry null
+                    }
                 }
 
-                // Log.d("reading-time", System.nanoTime().toString() + " - build EPubItem")
-
-                // Log.d("reading-time", System.nanoTime().toString() + " - close zip file " + file.name)
-                return createItem(other, dao, file.absolutePath, file.name, Date(file.lastModified()),
-                    file.length(), opfEntry.crc, id, title, author, fandom, description, genres.toTypedArray(),
-                    characters.toTypedArray())
+                entry = zipStream.nextEntry
             }
+        } finally {
+            zipStream.close()
+            fileStream?.close()
         }
-    }
 
-    private fun findEntry(epub: ZipFile, extension: String, xPath: XPathExpression) : ZipEntry? {
-        val ret = epub.entries().asSequence().first { !it.isDirectory && it.name.endsWith(extension) }
-        if (ret != null) return ret
-
-        val containerInfoEntry = epub.getEntry(CONTAINER_FILE_PATH)!!
-        val opfPath = BufferedInputStream(epub.getInputStream(containerInfoEntry)).use {
-            val container = DOCUMENT_FACTORY.newDocumentBuilder().parse(it)
-            it.close()
-            xPath.evaluate(container, XPathConstants.STRING).toString()
-        }
-        if (opfPath.isNotEmpty()) return epub.getEntry(opfPath)
         return null
     }
 
-    private fun createItem(other: EPubItem?, dao: EPubItemDAO, filePath: String, filename: String,
+    private fun readEntry(
+        opfEntry: ZipEntry,
+        data: ByteArray,
+        other: EPubItem?,
+        dao: EPubItemDAO,
+        file: DocumentFile,
+        getEntry: (uri: String) -> ByteArray?
+    ): EPubItem {
+        //val opfEntry = findEntry(zipStream, OPF_EXTENSION, XPATH_OPF_FILE_PATH) ?: return null
+        if (opfEntry.crc == other?.opfCrc) {
+            // The cached file information does not have to be updated
+            val modified = Date(file.lastModified())
+            if (modified != other.modified) {
+                val item = other.copy(modified = modified)
+                dao.update(item)
+                return item
+            }
+            return other
+        }
+        // Log.d("reading", "Now reading " + file.nameWithoutExtension)
+        // Log.d("reading-time", System.nanoTime().toString() + " - open opf")
+
+        val opf = DOCUMENT_FACTORY.newDocumentBuilder().parse(ByteArrayInputStream(data))
+        // Log.d("reading-time", System.nanoTime().toString() + " - normalize opf")
+        opf.normalizeDocument()
+
+        // Log.d("reading-time", System.nanoTime().toString() + " - grab meta")
+        val meta = XPATH_META.evaluate(opf, XPathConstants.NODE) as Node
+        meta.parentNode.removeChild(meta)
+
+        // Log.d("reading-time", System.nanoTime().toString() + " - grab meta children")
+        val id = path(meta, XPATH_ID) ?: file.uri.toString()
+        val title = path(meta, XPATH_TITLE) ?: "<No Title>"
+        val author = path(meta, XPATH_AUTHOR)
+        val fandom = path(meta, XPATH_FANDOM)
+        var description = path(meta, XPATH_DESCRIPTION, "\n\n")
+        val genres = path(meta, XPATH_GENRES)?.split(", ") ?: Collections.emptyList<String>()
+        val characters = path(meta, XPATH_CHARACTERS)?.split(", ") ?: Collections.emptyList<String>()
+
+        if (fandom.isNullOrEmpty() && description.isNullOrBlank() && genres.isNullOrEmpty()) {
+            Log.d(this::class.simpleName, "${file.name} empty description, read title page")
+            val titlePageId = XPATH_FIRST_PAGE_ID.evaluate(opf)
+            val titlePageHrefXPath = XPATH_FIRST_PAGE_HREF.format(titlePageId.replace("'", "\\'"))
+            val opfDir = opfEntry.name.replaceAfterLast('/', "", "")
+            val titlePageHref = opfDir + XPATH.evaluate(titlePageHrefXPath, opf)
+            val titlePage = getEntry(titlePageHref)
+
+            if (titlePage != null) {
+                val titlePageText = String(titlePage)
+
+                description =
+                    Html.fromHtml(titlePageText).toString()
+                        .replace(Regex("<br[^>]*>"), "\n")
+                        .replace(Regex("(<[^>]*>)|(^\\W+)|(\\W+$)"), "")
+                        .replace(Regex("\n(\\s*\n)+"), "\n")
+
+                val descriptionLines = description.lines()
+                if (descriptionLines.size > DESCRIPTION_MAX_LINES)
+                    description = descriptionLines.subList(0, DESCRIPTION_REDUCE_TO_LINES).joinToString("\n")
+
+                Log.d(this::class.simpleName, "\tNew description: $description")
+            } else
+                Log.d(
+                    this::class.simpleName,
+                    "\tNo title page found. (ID: $titlePageId, HREF: $titlePageHref [XPATH: $titlePageHrefXPath])"
+                )
+        }
+        // Log.d("reading-time", System.nanoTime().toString() + " - build EPubItem")
+
+        // Log.d("reading-time", System.nanoTime().toString() + " - close zip file " + file.name)
+        return createItem(
+            other, dao, file.uri, file.name!!, Date(file.lastModified()),
+            file.length(), opfEntry.crc, id, title, author, fandom, description, genres.toTypedArray(),
+            characters.toTypedArray()
+        )
+    }
+
+    private fun findEntry(epub: ZipInputStream, extension: String, xPath: XPathExpression) : ZipEntry? {
+        epub.reset()
+        var entry: ZipEntry? = epub.nextEntry
+        while (entry != null) {
+            if (!entry.isDirectory && entry.name.endsWith(extension, true))
+                return entry
+
+            entry = epub.nextEntry
+        }
+
+        if (openEntry(epub, CONTAINER_FILE_PATH) != null) {
+            val opfPath = BufferedInputStream(epub).use {
+                val container = DOCUMENT_FACTORY.newDocumentBuilder().parse(it)
+                it.close()
+                xPath.evaluate(container, XPathConstants.STRING).toString()
+            }
+
+            if (opfPath.isNotEmpty())
+                return openEntry(epub, opfPath)
+        }
+
+        return null
+    }
+
+    private fun openEntry(epub: ZipInputStream, name: String): ZipEntry? {
+        epub.reset()
+        var entry: ZipEntry? = epub.nextEntry
+        while (entry != null) {
+            if (entry.name == name)
+                return entry
+
+            entry = epub.nextEntry
+        }
+        return null
+    }
+
+    private fun createItem(other: EPubItem?, dao: EPubItemDAO, filePath: Uri, filename: String,
                            dateLastModified: Date, length: Long, crc: Long, id: String, title: String, author: String?,
                            fandom: String?, description: String?, genres: Array<String>,
                            characters: Array<String>): EPubItem {
         val item = EPubItem(
-            filePath, filename, dateLastModified, length, crc,
+            filePath.toString(), filename, dateLastModified, length, crc,
             id, title, author, fandom, description, genres, characters
         )
         // Log.d("reading-time", System.nanoTime().toString() + " - Save EPubItem")

@@ -39,4 +39,8 @@
     <string name="pref_dev_title">Developer</string>
     <string name="pref_dev_enabled_title">show developer options</string>
     <string name="pref_dev_items_empty_title">Empty EPub informations</string>
+    <string name="pref_dir_select_info">Where do you want to add a folder from?</string>
+    <string name="pref_dir_select_title">Select method</string>
+    <string name="pref_dir_select_native">Harddrive</string>
+    <string name="pref_dir_select_saf">Another app</string>
 </resources>

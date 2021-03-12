@@ -32,7 +32,7 @@ import eu.schnuff.bonfo2.settings.SettingsMain
 import eu.schnuff.bonfo2.update.UpdateService
 import java.io.File
 
-const val REFRESHING_RESET_TIME = 250L
+const val REFRESHING_RESET_TIME = 750L
 
 class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, SearchView.OnQueryTextListener, ServiceConnection {
     private lateinit var binding: ActivityMainBinding
@@ -78,11 +78,15 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
     private var isRefreshing: Boolean = false
         set(value) {
             field = value
-            binding.refresh.isRefreshing = value
-            binding.progressBar.visibility = if (value) {
-                binding.progressBar.isIndeterminate = true
+            val visibility = if (value) {
                 View.VISIBLE
             } else View.GONE
+            if (binding.refresh.isRefreshing != value)
+                binding.refresh.isRefreshing = value
+            if (binding.progressBar.visibility != visibility) {
+                binding.progressBar.visibility = visibility
+                binding.progressBar.isIndeterminate = true
+            }
         }
     private var filter
         get() = searchView.query.toString()
@@ -107,7 +111,7 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
 
         try {
             startActivity(Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(Uri.fromFile(File(it.filePath)), "application/epub+zip")
+                setDataAndType(Uri.parse(it.filePath), "application/epub+zip")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             })
         } catch (e: Exception) {
@@ -156,8 +160,8 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
     }
 
     override fun onResume() {
-        refreshingResetHandler.removeCallbacks(refreshingResetRunnable)
-        refreshingResetHandler.postDelayed(refreshingResetRunnable, REFRESHING_RESET_TIME)
+        //refreshingResetHandler.removeCallbacks(refreshingResetRunnable)
+        //refreshingResetHandler.postDelayed(refreshingResetRunnable, REFRESHING_RESET_TIME)
         super.onResume()
     }
 
@@ -243,13 +247,13 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
             progressNow.observe(this@MainActivity) {
                 binding.progressBar.isIndeterminate = false
                 binding.progressBar.progress = it
-                if (it < max) {
+                /*if (it < max) {
                     isRefreshing = true
                     refreshingResetHandler.removeCallbacks(refreshingResetRunnable)
                     refreshingResetHandler.postDelayed(refreshingResetRunnable, REFRESHING_RESET_TIME)
                 } else {
                     isRefreshing = false
-                }
+                }*/
             }
         }
     }

@@ -1,19 +1,26 @@
 package eu.schnuff.bonfo2.update
 
+import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
+import android.provider.DocumentsContract
+import android.provider.DocumentsProvider
 import android.text.Html
 import android.util.Log
+import androidx.core.net.toFile
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
+import androidx.work.CoroutineWorker
 import eu.schnuff.bonfo2.data.AppDatabase
 import eu.schnuff.bonfo2.data.ePubItem.EPubItem
 import eu.schnuff.bonfo2.data.ePubItem.EPubItemDAO
 import eu.schnuff.bonfo2.helper.Setting
+import kotlinx.coroutines.*
 import org.w3c.dom.Node
 import org.w3c.dom.NodeList
 import java.io.BufferedInputStream
 import java.io.ByteArrayInputStream
+import java.lang.Runnable
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.PriorityBlockingQueue
@@ -27,13 +34,14 @@ import javax.xml.xpath.XPathExpression
 import javax.xml.xpath.XPathFactory
 import kotlin.collections.HashMap
 import kotlin.concurrent.thread
+import kotlin.coroutines.coroutineContext
 
 const val DESCRIPTION_MAX_LINES = 30
 const val DESCRIPTION_REDUCE_TO_LINES = 15
 
 object UpdateLogic {
     private const val LARGE_FILE_MIN_SIZE: Long = (1024 shl 1) * 100
-    private const val CONSUMER_COUNT = 4
+    private const val CONSUMER_COUNT = 16
     private const val CONTAINER_FILE_PATH = "META-INF/container.xml"
     private const val OPF_EXTENSION = ".opf"
     private val XPATH = XPathFactory.newInstance().newXPath()
@@ -56,15 +64,39 @@ object UpdateLogic {
         val directories = Setting(context).watchedDirectories
         val queue = PriorityBlockingQueue(200, compareByDescending(DocumentFile::lastModified))
 
+        var others: ConcurrentHashMap<String, EPubItem>? = null
+
         val supplier = thread {
-            directories.forEach {
-                DocumentFile.fromTreeUri(context, it.toUri())?.let {
-                    readDirectoryToQueue(context, queue, it)
+            runBlocking {
+                val otherAsync = async {
+                    while (others == null) delay(100)
+                    others!!.keys.map {
+                        async {
+                            val f = DocumentFile.fromSingleUri(context, it.toUri())
+                            if (f?.exists() == true)
+                                queue.add(f)
+                        }
+                    }.awaitAll()
                 }
+                directories.map {
+                    async {
+                        val uri = it.toUri()
+                        when (uri.scheme) {
+                            ContentResolver.SCHEME_CONTENT -> DocumentFile.fromTreeUri(context, uri)
+                            ContentResolver.SCHEME_FILE -> DocumentFile.fromFile(uri.toFile())
+                            else -> null
+                        }?.let {
+                            readDirectoryToQueue(context, queue, it) { uri ->
+                                others?.contains(uri) == true
+                            }
+                        }
+                    }
+                }.awaitAll()
+                otherAsync.await()
             }
         }
 
-        val others = ConcurrentHashMap(dao.getAllNow().associateBy { it.filePath }.toMutableMap())
+        others = ConcurrentHashMap(dao.getAllNow().associateBy { it.filePath }.toMutableMap())
 
         val idx = AtomicInteger(0)
 
@@ -97,13 +129,18 @@ object UpdateLogic {
         onComplete()
     }
 
-    private fun readDirectoryToQueue(context: Context, queue: Queue<DocumentFile>, dir: DocumentFile) {
-        dir.listFiles().forEach {
-            when {
-                it.isDirectory -> readDirectoryToQueue(context, queue, it)
-                it.isFile && it.name?.endsWith(".epub", true) == true -> queue.add(it)
+    private suspend fun readDirectoryToQueue(context: Context, queue: Queue<DocumentFile>, dir: DocumentFile, isRead: (it: Uri) -> Boolean) {
+        dir.listFiles().map {
+            GlobalScope.async {
+                if (isRead(it.uri))
+                    return@async null
+                when {
+                    it.isDirectory -> readDirectoryToQueue(context, queue, it, isRead)
+                    it.isFile && it.name?.endsWith(".epub", true) == true -> queue.add(it)
+                    else -> null
+                }
             }
-        }
+        }.awaitAll()
     }
 
     private fun readEPub(context: Context, file: DocumentFile, other: EPubItem?, dao: EPubItemDAO): EPubItem? {
@@ -204,7 +241,7 @@ object UpdateLogic {
                 val titlePageText = String(titlePage)
 
                 description =
-                    Html.fromHtml(titlePageText).toString()
+                    titlePageText.replace(Regex(".*<body>(.+)</body.*", RegexOption.DOT_MATCHES_ALL), "$1")
                         .replace(Regex("<br[^>]*>"), "\n")
                         .replace(Regex("(<[^>]*>)|(^\\W+)|(\\W+$)"), "")
                         .replace(Regex("\n(\\s*\n)+"), "\n")

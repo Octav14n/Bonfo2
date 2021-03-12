@@ -8,6 +8,7 @@ import android.os.Environment
 import android.provider.DocumentsContract
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
@@ -48,21 +49,34 @@ class SettingsMain : AppCompatActivity() {
             watchedDirectories = findPreference(PREFERENCE.PREFERENCE_WATCHED_DIRECTORIES.string)!!
             watchedDirectories.onAddListener = {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
-                        addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                    MaterialDialog(requireContext()).show {
+                        title(R.string.pref_dir_select_title)
+                        message(R.string.pref_dir_select_info)
+                        positiveButton(R.string.pref_dir_select_saf) { openDirDialogSAF() }
+                        negativeButton(R.string.pref_dir_select_native) { openDirDialogNative() }
                     }
-
-                    startActivityForResult(intent, ACTIVITY_FOLDER_SELECT_ID)
                 } else {
-                    requireContext().withFilePermission {
-                        MaterialDialog(requireContext()).show {
-                            folderChooser(context, initialDirectory = Environment.getExternalStorageDirectory()) { _, folder ->
-                                Log.d(DirectoriesPreference.TAG, "folder chooser: $folder")
-                                setting.addWatchedDirectory(folder.absolutePath)
-                            }
-                        }
+                    openDirDialogNative()
+                }
+            }
+        }
+
+        private fun openDirDialogSAF() {
+            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            }
+
+            startActivityForResult(intent, ACTIVITY_FOLDER_SELECT_ID)
+        }
+
+        private fun openDirDialogNative() {
+            requireContext().withFilePermission {
+                MaterialDialog(requireContext()).show {
+                    folderChooser(context, initialDirectory = Environment.getExternalStorageDirectory()) { _, folder ->
+                        Log.d(DirectoriesPreference.TAG, "folder chooser: $folder")
+                        setting.addWatchedDirectory(folder.toUri().toString())
                     }
                 }
             }

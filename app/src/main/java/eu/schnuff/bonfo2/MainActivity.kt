@@ -162,6 +162,7 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
     override fun onResume() {
         //refreshingResetHandler.removeCallbacks(refreshingResetRunnable)
         //refreshingResetHandler.postDelayed(refreshingResetRunnable, REFRESHING_RESET_TIME)
+        isRefreshing = false
         super.onResume()
     }
 
@@ -247,6 +248,7 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
             progressNow.observe(this@MainActivity) {
                 binding.progressBar.isIndeterminate = false
                 binding.progressBar.progress = it
+                isRefreshing = true
                 /*if (it < max) {
                     isRefreshing = true
                     refreshingResetHandler.removeCallbacks(refreshingResetRunnable)

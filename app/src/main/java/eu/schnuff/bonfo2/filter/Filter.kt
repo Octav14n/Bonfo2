@@ -17,7 +17,7 @@ class Filter {
     private val onChangeListener = mutableListOf<(it: Filter) -> Unit>()
     var excludeGenres: Set<String> = emptySet()
         set(value) {
-            val v = value.map { it.toLowerCase(Locale.getDefault()) }.toSet()
+            val v = value.map { it.lowercase(Locale.getDefault()) }.toSet()
             if (field == v)
                 return
             field = v
@@ -34,7 +34,7 @@ class Filter {
     fun apply(items: List<EPubItem>): List<EPubItem> {
         return items.filter {
             (minFileSize == -1 || it.fileSize >= minFileSize) &&
-            (excludeGenres.isEmpty() || !it.genres.any { it.toLowerCase(Locale.getDefault()) in excludeGenres }) &&
+            (excludeGenres.isEmpty() || !it.genres.any { it.lowercase(Locale.getDefault()) in excludeGenres }) &&
             search.applies(it)
         }
     }

@@ -1,11 +1,14 @@
 package eu.schnuff.bonfo2
 
+import android.Manifest
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.*
+import android.provider.Settings
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -16,6 +19,7 @@ import androidx.appcompat.widget.SearchView
 import androidx.core.net.toUri
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import androidx.work.impl.utils.PackageManagerHelper
 import com.afollestad.materialdialogs.utils.MDUtil.getStringArray
 import eu.schnuff.bonfo2.data.ePubItem.EPubItem
 import eu.schnuff.bonfo2.data.ePubItem.EPubViewModel
@@ -30,7 +34,6 @@ import eu.schnuff.bonfo2.helper.withFilePermission
 import eu.schnuff.bonfo2.list.BookAdapter
 import eu.schnuff.bonfo2.settings.SettingsMain
 import eu.schnuff.bonfo2.update.UpdateService
-import java.io.File
 
 const val REFRESHING_RESET_TIME = 750L
 
@@ -62,13 +65,24 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
                     2 -> item.webUrl?.run { startActivity(Intent(Intent.ACTION_VIEW, toUri())) }
                     3 -> {
                         item.webUrl ?: return@setItems
-                        val intent = packageManager.getLaunchIntentForPackage("eu.schnuff.bofilo")?.apply {
-                            action = Intent.ACTION_SEND
+                        val intent = Intent(Intent.ACTION_SEND).apply {
+                            `package` = "eu.schnuff.bofilo"
                             putExtra(Intent.EXTRA_TEXT, item.webUrl)
                             type = "text/plain"
-                            // putExtra(Intent.EXTRA_COMPONENT_NAME, item.fileName)
-                        } ?: return@setItems
+                        }
                         startActivity(intent)
+                    }
+                    4 -> {
+                        //packageManager.queryIntentActivities()
+                        val intent = Intent("eu.schnuff.bofilo.action.unnew").apply {
+                            putExtra(Intent.EXTRA_TEXT, item.filePath.toUri().toString())
+                        }
+                        try {
+                            startActivity(intent)
+                        } catch (e: Exception) {
+                            Log.e(this::class.simpleName, "Can not start unnew.", e)
+                            Toast.makeText(this@MainActivity, "BoFiLo is not installed.", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }}
             }.show()
@@ -145,11 +159,13 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
         adapter.filter(setting.filter)
 
         binding.refresh.setOnRefreshListener(this)
-        ePubViewModel.get().observe(this, {
-            list -> adapter.submitList(list)
-        })
+        ePubViewModel.get().observe(this) { list ->
+            adapter.submitList(list)
+        }
         historyViewModel.get().observe(this, { list -> adapter.lastOpened = list.map { it.item } })
         binding.list.adapter = adapter
+
+        bindService(Intent(this, UpdateService::class.java), this, 0)
     }
 
     override fun onPause() {
@@ -162,6 +178,8 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
     override fun onResume() {
         //refreshingResetHandler.removeCallbacks(refreshingResetRunnable)
         //refreshingResetHandler.postDelayed(refreshingResetRunnable, REFRESHING_RESET_TIME)
+        //if (updateService == null)
+
         isRefreshing = false
         super.onResume()
     }
@@ -174,14 +192,29 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
 
     fun onRefresh(v: View) = onRefresh()
     override fun onRefresh() = withFilePermission {
-        startUpdateService()
+        val permissions = packageManager
+            .getPackageInfo(packageName, PackageManager.GET_PERMISSIONS)
+            .requestedPermissions!!
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+            permissions.contains(Manifest.permission.MANAGE_EXTERNAL_STORAGE) &&
+            !setting.useMediaStore &&
+            !Environment.isExternalStorageManager()
+        ) {
+            //request for the permission
+            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+            val uri = Uri.fromParts("package", packageName, null)
+            intent.data = uri
+            startActivity(intent)
+        } else {
+            startUpdateService()
+        }
     }
 
     private fun startUpdateService() {
         val intent = Intent(this, UpdateService::class.java).apply {
             action = UpdateService.ACTION_START
         }
-        bindService(intent, this, Context.BIND_AUTO_CREATE)
+        // bindService(intent, this, Context.BIND_AUTO_CREATE)
         startService(intent)
     }
 

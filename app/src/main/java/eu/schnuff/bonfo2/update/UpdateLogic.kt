@@ -1,30 +1,23 @@
 package eu.schnuff.bonfo2.update
 
-import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
-import android.provider.DocumentsContract
-import android.provider.DocumentsProvider
-import android.text.Html
+import android.os.Build
 import android.util.Log
-import androidx.core.net.toFile
 import androidx.core.net.toUri
-import androidx.documentfile.provider.DocumentFile
-import androidx.work.CoroutineWorker
 import eu.schnuff.bonfo2.data.AppDatabase
 import eu.schnuff.bonfo2.data.ePubItem.EPubItem
 import eu.schnuff.bonfo2.data.ePubItem.EPubItemDAO
+import eu.schnuff.bonfo2.filewrapper.FileWrapper
 import eu.schnuff.bonfo2.helper.Setting
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.sync.Semaphore
 import org.w3c.dom.Node
 import org.w3c.dom.NodeList
 import java.io.BufferedInputStream
 import java.io.ByteArrayInputStream
-import java.lang.Runnable
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.PriorityBlockingQueue
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
@@ -32,9 +25,6 @@ import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.xpath.XPathConstants
 import javax.xml.xpath.XPathExpression
 import javax.xml.xpath.XPathFactory
-import kotlin.collections.HashMap
-import kotlin.concurrent.thread
-import kotlin.coroutines.coroutineContext
 
 const val DESCRIPTION_MAX_LINES = 30
 const val DESCRIPTION_REDUCE_TO_LINES = 15
@@ -42,6 +32,8 @@ const val DESCRIPTION_REDUCE_TO_LINES = 15
 object UpdateLogic {
     private const val LARGE_FILE_MIN_SIZE: Long = (1024 shl 1) * 100
     private const val CONSUMER_COUNT = 16
+    private val CONSUMER_ACTIVE_READING = Semaphore(2)
+    private const val CONSUMER_OUT_OF_MEM_RETRIES = 3
     private const val CONTAINER_FILE_PATH = "META-INF/container.xml"
     private const val OPF_EXTENSION = ".opf"
     private val XPATH = XPathFactory.newInstance().newXPath()
@@ -60,134 +52,180 @@ object UpdateLogic {
     private const val UPDATE_INTERVAL_MILLIS = 250
 
     fun readItems(context: Context, onComplete: () -> Unit = {}, onProgress: (maxElements: Int, finishedElements: Int) -> Unit = { _, _ -> }) {
+        val setting = Setting(context)
         val dao = AppDatabase.getDatabase(context).ePubItemDao()
-        val directories = Setting(context).watchedDirectories
-        val queue = PriorityBlockingQueue(200, compareByDescending(DocumentFile::lastModified))
 
-        var others: ConcurrentHashMap<String, EPubItem>? = null
+        val others: MutableMap<String, EPubItem> =
+            dao.getAllNow().associateBy { it.filePath }.toMutableMap()
+        val lastModified = setting.lastModified
+        Log.d(this::class.simpleName, "Only using files newer than $lastModified")
 
-        val supplier = thread {
-            runBlocking {
-                val otherAsync = async {
-                    while (others == null) delay(100)
-                    others!!.keys.map {
-                        async {
-                            val f = DocumentFile.fromSingleUri(context, it.toUri())
-                            if (f?.exists() == true)
-                                queue.add(f)
-                        }
-                    }.awaitAll()
-                }
-                directories.map {
-                    async {
-                        val uri = it.toUri()
-                        when (uri.scheme) {
-                            ContentResolver.SCHEME_CONTENT -> DocumentFile.fromTreeUri(context, uri)
-                            ContentResolver.SCHEME_FILE -> DocumentFile.fromFile(uri.toFile())
-                            else -> null
-                        }?.let {
-                            readDirectoryToQueue(context, queue, it) { uri ->
-                                others?.contains(uri) == true
-                            }
-                        }
+        val total = AtomicInteger(0)
+
+        runBlocking {
+            flow {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && setting.useMediaStore) {
+                    setting.watchedDirectories.forEach {
+                        context.contentResolver.refresh(it.toUri(), null, null)
                     }
-                }.awaitAll()
-                otherAsync.await()
+                    val directory = FileWrapper.mediaStore(context)
+                    val files = directory.listFiles(lastModified)
+                    total.set(files.size)
+                    files.forEach { emit(it) }
+                } else {
+                    readDirectories(context, this, total, lastModified, others)
+                }
+            }.catch { t ->
+                Log.w("update", "error:", t)
+            }.onCompletion {
+                Log.i("update", "completed.")
             }
-        }
-
-        others = ConcurrentHashMap(dao.getAllNow().associateBy { it.filePath }.toMutableMap())
-
-        val idx = AtomicInteger(0)
-
-        val runnable = Runnable {
-            while (supplier.isAlive || queue.isNotEmpty()) {
-                queue.poll(100, TimeUnit.MILLISECONDS)?.let {
-                    val i = idx.incrementAndGet()
-                    onProgress(queue.size + i, i)
+                //.flowOn(Dispatchers.IO)
+            .buffer()
+            .collectIndexed { idx, it ->
+                onProgress(total.get(), idx)
+                try {
+                    //var s = 1L
+                    //while (s <= CONSUMER_OUT_OF_MEM_RETRIES) {
                     try {
                         readEPub(context, it, others[it.uri.toString()], dao)?.run {
                             others.remove(it.uri.toString())
                         }
-                    } catch (e: Exception) {
-                        Log.w("update", "Epub Error (${it.uri}):", e)
+                        return@collectIndexed
+                    } catch (e: OutOfMemoryError) {
+                        Log.e("update", "out of memory [${it.name} / ${it.length / (1024 shl 2)}M]")
+                        //delay(250 * s)
+                        //s += 1
                     }
+                    //}
+                } catch (e: Exception) {
+                    Log.w("update", "Epub Error (${it.uri}):", e)
                 }
             }
         }
-        val threads = Array(CONSUMER_COUNT) {
-            Thread(runnable).also {
-                it.start()
-            }
-        }
+        Log.i("update", "update finished.")
 
-        threads.forEach {
-            it.join()
-        }
-
-        dao.delete(others.values)
+        if (lastModified <= 0)
+            dao.delete(others.values)
         onComplete()
+        setting.lastModified = dao.getLastModified()
     }
 
-    private suspend fun readDirectoryToQueue(context: Context, queue: Queue<DocumentFile>, dir: DocumentFile, isRead: (it: Uri) -> Boolean) {
-        dir.listFiles().map {
-            GlobalScope.async {
-                if (isRead(it.uri))
-                    return@async null
-                when {
-                    it.isDirectory -> readDirectoryToQueue(context, queue, it, isRead)
-                    it.isFile && it.name?.endsWith(".epub", true) == true -> queue.add(it)
-                    else -> null
-                }
+    private suspend fun readDirectories(
+        context: Context,
+        flow: FlowCollector<FileWrapper>,
+        total: AtomicInteger,
+        lastModified: Long,
+        others: Map<String, EPubItem>
+    ) {
+        val directories = Setting(context).watchedDirectories
+
+        /*val otherAsync = async {
+            others.keys.forEach {
+                flow.emit(FileWrapper.fromUri(context, it.toUri()))
             }
-        }.awaitAll()
+        }*/
+        directories.map {
+            val directory = FileWrapper.fromUri(context, it.toUri())
+            readDirectoryToQueue(flow, total, lastModified, directory) { uri ->
+                others.containsKey(uri.toString())
+            }
+        }
+        //otherAsync.await()
     }
 
-    private fun readEPub(context: Context, file: DocumentFile, other: EPubItem?, dao: EPubItemDAO): EPubItem? {
-        if (other != null && Date(file.lastModified()) == other.modified && file.length() == other.fileSize)
+    private suspend fun readDirectoryToQueue(
+        flow: FlowCollector<FileWrapper>,
+        total: AtomicInteger,
+        lastModified: Long,
+        dir: FileWrapper,
+        isRead: (it: Uri) -> Boolean
+    ) {
+        //Log.d(this::class.simpleName, "Now starting reading '%s' to queue".format(dir.uri))
+
+        val files = dir.listFiles(lastModified)
+        //Log.d(this::class.simpleName, "\tFound files: %s [size: %d]".format(files, files.size))
+
+        files.map {
+            //Log.d(this::class.simpleName, "\tFound file %s".format(it.uri))
+            suspend {
+                when {
+                    isRead(it.uri) -> {}
+                    it.isDirectory -> readDirectoryToQueue(flow, total, lastModified, it, isRead)
+                    it.isFile && it.name.endsWith(".epub", true) -> {
+                        total.incrementAndGet()
+                        flow.emit(it)
+                    }
+                    else -> {}
+                }
+            }()
+        }
+    }
+
+    private suspend fun readEPub(context: Context, file: FileWrapper, other: EPubItem?, dao: EPubItemDAO): EPubItem? {
+        if (other != null && Date(file.lastModified) == other.modified && file.length == other.fileSize)
             return other
 
-        val fileStream = context.contentResolver.openInputStream(file.uri)
-        val zipStream = ZipInputStream(fileStream)
-        var entry: ZipEntry? = zipStream.nextEntry
-
-        // Cache file
+        CONSUMER_ACTIVE_READING.acquire()
         try {
-            val zipMap = HashMap<ZipEntry, ByteArray>()
-            while (entry != null) {
-                val data = zipStream.readBytes()
-                zipMap[entry] = data
-                zipStream.closeEntry()
+            val runtime = Runtime.getRuntime()
+            var tries = CONSUMER_OUT_OF_MEM_RETRIES
+            if (file.length >= runtime.maxMemory())
+                throw OutOfMemoryError("Not enough space to read in ${file.name} [${file.length / 1000 / 1000}MB")
+            while (file.length >= runtime.freeMemory()) {
+                delay(10)
+                runtime.gc()
+                tries -= 1
+                if (tries <= 0)
+                    throw OutOfMemoryError("Not enough space to read in ${file.name} [${file.length / 1000 / 1000}MB")
+            }
 
-                if (entry.name.endsWith(OPF_EXTENSION, true)) {
-                    return readEntry(entry, data, other, dao, file) {
-                        if (zipMap.keys.any { k -> k.name == it })
-                            return@readEntry zipMap[zipMap.keys.first { k -> k.name == it }]
+            val v = withContext(Dispatchers.IO) {
+                val fileStream = context.contentResolver.openInputStream(file.uri)
+                val zipStream = ZipInputStream(fileStream)
+                var entry: ZipEntry? = zipStream.nextEntry
 
-                        var entry2 = entry
-                        while (entry2 != null) {
-                            val data2 = zipStream.readBytes()
-                            zipMap[entry2] = data2
-                            zipStream.closeEntry()
+                // Cache file
+                try {
+                    val zipMap = HashMap<ZipEntry, ByteArray>()
+                    while (entry != null) {
+                        val data = zipStream.readBytes()
+                        zipMap[entry] = data
+                        zipStream.closeEntry()
 
-                            if (entry2.name == it)
-                                return@readEntry data2
+                        if (entry.name.endsWith(OPF_EXTENSION, true)) {
+                            return@withContext readEntry(entry, data, other, dao, file) {
+                                if (zipMap.keys.any { k -> k.name == it })
+                                    return@readEntry zipMap[zipMap.keys.first { k -> k.name == it }]
 
-                            entry2 = zipStream.nextEntry
+                                var entry2 = entry
+                                while (entry2 != null) {
+                                    val data2 = zipStream.readBytes()
+                                    zipMap[entry2] = data2
+                                    zipStream.closeEntry()
+
+                                    if (entry2.name == it)
+                                        return@readEntry data2
+
+                                    entry2 = zipStream.nextEntry
+                                }
+
+                                return@readEntry null
+                            }
                         }
 
-                        return@readEntry null
+                        entry = zipStream.nextEntry
                     }
+                } finally {
+                    zipStream.close()
+                    fileStream?.close()
                 }
-
-                entry = zipStream.nextEntry
+                null
             }
+            return v
         } finally {
-            zipStream.close()
-            fileStream?.close()
+            CONSUMER_ACTIVE_READING.release()
         }
-
-        return null
     }
 
     private fun readEntry(
@@ -195,13 +233,13 @@ object UpdateLogic {
         data: ByteArray,
         other: EPubItem?,
         dao: EPubItemDAO,
-        file: DocumentFile,
+        file: FileWrapper,
         getEntry: (uri: String) -> ByteArray?
     ): EPubItem {
         //val opfEntry = findEntry(zipStream, OPF_EXTENSION, XPATH_OPF_FILE_PATH) ?: return null
         if (opfEntry.crc == other?.opfCrc) {
             // The cached file information does not have to be updated
-            val modified = Date(file.lastModified())
+            val modified = Date(file.lastModified)
             if (modified != other.modified) {
                 val item = other.copy(modified = modified)
                 dao.update(item)
@@ -261,8 +299,8 @@ object UpdateLogic {
 
         // Log.d("reading-time", System.nanoTime().toString() + " - close zip file " + file.name)
         return createItem(
-            other, dao, file.uri, file.name!!, Date(file.lastModified()),
-            file.length(), opfEntry.crc, id, title, author, fandom, description, genres.toTypedArray(),
+            other, dao, file.uri, file.name, Date(file.lastModified),
+            file.length, opfEntry.crc, id, title, author, fandom, description, genres.toTypedArray(),
             characters.toTypedArray()
         )
     }

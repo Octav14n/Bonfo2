@@ -9,5 +9,6 @@
         <item>Search author</item>
         <item>Open original</item>
         <item>Update via BoFiLo</item>
+        <item>Un-New via BoFiLo</item>
     </string-array>
 </resources>

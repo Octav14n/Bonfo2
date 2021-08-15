@@ -14,6 +14,9 @@ interface EPubItemDAO {
     @Query("SELECT * FROM epubitem ORDER BY modified DESC, author, url")
     fun getAllNow(): List<EPubItem>
 
+    @Query("SELECT MAX(modified) FROM epubitem")
+    fun getLastModified(): Long
+
     @Update
     fun update(ePubItem: EPubItem)
 

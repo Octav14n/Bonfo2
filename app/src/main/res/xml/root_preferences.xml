@@ -29,6 +29,13 @@
         <Preference
             android:key="developer_items_empty"
             android:title="@string/pref_dev_items_empty_title" />
+        <Preference
+            android:key="reset_last_modified"
+            android:title="@string/pref_dev_reset_last_modified" />
+        <SwitchPreference
+                android:key="developer_use_mediastore"
+                android:title="@string/pref_dev_use_mediastore_title"
+                android:summary="@string/pref_dev_use_mediastore_summary" android:defaultValue="true"/>
     </PreferenceCategory>
 
 </PreferenceScreen>

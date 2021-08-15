@@ -7,11 +7,11 @@ import eu.schnuff.bonfo2.data.ePubItem.EPubItem
 import java.util.*
 
 @Entity(tableName = "historyitem")
-@ForeignKey(
+/*@ForeignKey(
     entity = EPubItem::class,
     parentColumns = ["item"],
     childColumns = ["url"]
-)
+)*/
 data class HistoryItem (
     val item: String,
     val action: ACTION,

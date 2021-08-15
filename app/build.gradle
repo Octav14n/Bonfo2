@@ -4,7 +4,7 @@ apply plugin: 'kotlin-kapt'
 
 android {
     compileSdkVersion 30
-    buildToolsVersion "29.0.3"
+    buildToolsVersion "30.0.2"
     defaultConfig {
         applicationId "eu.schnuff.bonfo2"
         minSdkVersion 16
@@ -55,10 +55,10 @@ android {
 }
 
 dependencies {
-    def roomVersion = "2.2.6"
+    def roomVersion = "2.3.0"
     def preferenceVersion = "1.1.1"
     def archLifecycleVersion = '2.2.0'
-    def materialVersion = '1.3.0'
+    def materialVersion = '1.4.0'
     def coroutines = '1.3.8'
     def workVersion = '2.5.0'
     def folderVersion = '3.3.0'
@@ -66,16 +66,16 @@ dependencies {
 
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
-    implementation 'androidx.appcompat:appcompat:1.2.0'
-    implementation 'androidx.core:core-ktx:1.3.2'
-    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+    implementation 'androidx.appcompat:appcompat:1.3.1'
+    implementation 'androidx.core:core-ktx:1.6.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.0'
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
     testImplementation 'junit:junit:4.13.1'
-    androidTestImplementation 'androidx.test:runner:1.3.0'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+    androidTestImplementation 'androidx.test:runner:1.4.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
 
     // RecyclerView
-    implementation 'androidx.recyclerview:recyclerview:1.2.0'
+    implementation 'androidx.recyclerview:recyclerview:1.2.1'
     implementation 'com.simplecityapps:recyclerview-fastscroll:2.0.1'
 
     // Room components

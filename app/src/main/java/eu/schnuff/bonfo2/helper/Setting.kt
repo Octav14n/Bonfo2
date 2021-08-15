@@ -1,6 +1,7 @@
 package eu.schnuff.bonfo2.helper
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
 
 enum class PREFERENCE(val string: String) {
@@ -11,11 +12,18 @@ enum class PREFERENCE(val string: String) {
     PREFERENCE_SORT_BY_FILTER	    ("sort_by_filter"),
     PREFERENCE_SHOW_SMALL_FILTER	("show_small_filter"),
     PREFERENCE_SHOW_NSFW_FILTER 	("show_nsfw_filter"),
-    PREFERENCE_MIN_FILE_SIZE	    ("min_file_size")
+    PREFERENCE_MIN_FILE_SIZE	    ("min_file_size"),
+    PREFERENCE_USE_MEDIASTORE       ("developer_use_mediastore"),
+    INTERNAL_LAST_MODIFIED          ("last_modified"),
 }
 
-class Setting(context: Context) {
-    private val pref = PreferenceManager.getDefaultSharedPreferences(context)
+class Setting(context: Context) : SharedPreferences.OnSharedPreferenceChangeListener {
+    private val pref = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
+    private val changeListeners = mutableMapOf<String, (Setting) -> Unit>()
+
+    init {
+        pref.registerOnSharedPreferenceChangeListener(this)
+    }
 
     var watchedDirectories: Set<String>
         get() = pref.getStringSet(PREFERENCE.PREFERENCE_WATCHED_DIRECTORIES.string, emptySet()) ?: setOf()
@@ -53,10 +61,19 @@ class Setting(context: Context) {
         get() = pref.getString(PREFERENCE.PREFERENCE_MIN_FILE_SIZE.string, "120")!!.toInt() * 1024
         set(value) = pref.edit().putString(PREFERENCE.PREFERENCE_MIN_FILE_SIZE.string, (value / 1024).toString()).apply()
 
+    var lastModified: Long
+        get() = pref.getLong(PREFERENCE.INTERNAL_LAST_MODIFIED.string, -1)
+        set(value) = pref.edit().putLong(PREFERENCE.INTERNAL_LAST_MODIFIED.string, value).apply()
+
+    var useMediaStore: Boolean
+        get() = pref.getBoolean(PREFERENCE.PREFERENCE_USE_MEDIASTORE.string, true)
+        set(value) = pref.edit().putBoolean(PREFERENCE.PREFERENCE_USE_MEDIASTORE.string, value).apply()
+
     fun registerOnChangeListener(preference: PREFERENCE, onChange: (it: Setting) -> Unit) {
-        pref.registerOnSharedPreferenceChangeListener { _, key ->
-            if (key == preference.string)
-                onChange(this)
-        }
+        changeListeners[preference.string] = onChange
+    }
+
+    override fun onSharedPreferenceChanged(p0: SharedPreferences, p1: String) {
+        changeListeners[p1]?.invoke(this)
     }
 }

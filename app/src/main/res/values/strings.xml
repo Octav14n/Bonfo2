@@ -43,4 +43,7 @@
     <string name="pref_dir_select_title">Select method</string>
     <string name="pref_dir_select_native">Harddrive</string>
     <string name="pref_dir_select_saf">Another app</string>
+    <string name="pref_dev_reset_last_modified">Reset last modified</string>
+    <string name="pref_dev_use_mediastore_title">Use MediaStore</string>
+    <string name="pref_dev_use_mediastore_summary">may be faster but less accurate</string>
 </resources>

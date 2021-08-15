@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.DocumentsContract
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
@@ -61,6 +62,7 @@ class SettingsMain : AppCompatActivity() {
             }
         }
 
+        @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
         private fun openDirDialogSAF() {
             val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
                 addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
@@ -82,13 +84,14 @@ class SettingsMain : AppCompatActivity() {
             }
         }
 
+        @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
         override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
             super.onActivityResult(requestCode, resultCode, data)
             if (resultCode == RESULT_OK && data != null && data.data != null) when (requestCode) {
                 ACTIVITY_FOLDER_SELECT_ID -> DocumentFile.fromTreeUri(requireContext(), data.data!!)?.let {
                     val takeFlags: Int = data.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION
                             or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                    val resolver: ContentResolver = context!!.contentResolver
+                    val resolver: ContentResolver = requireContext().contentResolver
                     resolver.takePersistableUriPermission(data.data!!, takeFlags)
 
                     val childUri = DocumentsContract.buildChildDocumentsUriUsingTree(it.uri, DocumentsContract.getTreeDocumentId(it.uri))
@@ -101,6 +104,7 @@ class SettingsMain : AppCompatActivity() {
         override fun onPreferenceTreeClick(preference: Preference?): Boolean {
             when (preference?.key) {
                 "developer_items_empty" -> thread { AppDatabase.getDatabase(requireContext()).ePubItemDao().devDeleteAll() }
+                "reset_last_modified" -> setting.lastModified = -1
                 else -> return false
             }
             return true

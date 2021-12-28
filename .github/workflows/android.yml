@@ -39,7 +39,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
           release_name: PreRelease
-          tag_name:  ${{ github.sha }}
+          tag_name:  ${{ github.ref }}
+          prerelease: true
       - name: Upload Release APK
         id: upload_release_asset
         uses: actions/upload-release-asset@v1.0.1

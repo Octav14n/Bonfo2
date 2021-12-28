@@ -40,7 +40,7 @@ data class EPubItem(
             g > 1 -> "%.2f GB".format(g)
             m > 1 -> "%.2f MB".format(m)
             k > 1 -> "%.2f KB".format(k)
-            else -> "%.2f Bytes".format(b)
+            else -> "%.2f Bytes".format(b.toFloat())
         }
 
         webUrl = url.split(", ").filter { it.startsWith("http") }.run { if(this.isEmpty()) null else this[0] }

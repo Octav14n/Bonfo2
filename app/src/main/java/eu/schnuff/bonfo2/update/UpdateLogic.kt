@@ -1,9 +1,15 @@
 package eu.schnuff.bonfo2.update
 
+import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.os.Build
+import android.os.Looper
+import android.provider.DocumentsContract
+import android.provider.MediaStore
 import android.util.Log
+import android.widget.Toast
+import androidx.core.net.toFile
 import androidx.core.net.toUri
 import eu.schnuff.bonfo2.data.AppDatabase
 import eu.schnuff.bonfo2.data.ePubItem.EPubItem
@@ -17,9 +23,11 @@ import org.w3c.dom.Node
 import org.w3c.dom.NodeList
 import java.io.BufferedInputStream
 import java.io.ByteArrayInputStream
+import java.io.FileNotFoundException
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.xpath.XPathConstants
@@ -28,11 +36,13 @@ import javax.xml.xpath.XPathFactory
 
 const val DESCRIPTION_MAX_LINES = 30
 const val DESCRIPTION_REDUCE_TO_LINES = 15
+const val DESCRIPTION_MAX_CHARACTERS = DESCRIPTION_MAX_LINES * 10000
+const val DESCRIPTION_REDUCE_TO_CHARACTERS = DESCRIPTION_MAX_CHARACTERS / 2
 
 object UpdateLogic {
     private const val LARGE_FILE_MIN_SIZE: Long = (1024 shl 1) * 100
     private const val CONSUMER_COUNT = 16
-    private val CONSUMER_ACTIVE_READING = Semaphore(2)
+    private val CONSUMER_ACTIVE_READING = Semaphore(CONSUMER_COUNT)
     private const val CONSUMER_OUT_OF_MEM_RETRIES = 3
     private const val CONTAINER_FILE_PATH = "META-INF/container.xml"
     private const val OPF_EXTENSION = ".opf"
@@ -61,20 +71,30 @@ object UpdateLogic {
         Log.d(this::class.simpleName, "Only using files newer than $lastModified")
 
         val total = AtomicInteger(0)
+        var useMediaStore = false
 
         runBlocking {
             flow {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && setting.useMediaStore) {
-                    setting.watchedDirectories.forEach {
-                        context.contentResolver.refresh(it.toUri(), null, null)
-                    }
+                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q && setting.useMediaStore) {
+                    Log.d(this::class.simpleName, "using MediaStore.")
+                    useMediaStore = true
                     val directory = FileWrapper.mediaStore(context)
-                    val files = directory.listFiles(lastModified)
+                    val files = if (setting.lastMediaStoreVersion != FileWrapper.getMediaStoreVersion(context)) {
+                        directory.listFiles(lastModified)
+                    } else {
+                        directory.listFiles()
+                    }
                     total.set(files.size)
                     files.forEach { emit(it) }
                 } else {
-                    readDirectories(context, this, total, lastModified, others)
+                    val reason = when {
+                        setting.useMediaStore -> "it is deactivated in settings."
+                        Build.VERSION.SDK_INT > Build.VERSION_CODES.R -> "your android is too old ${Build.VERSION.SDK_INT} <= ${Build.VERSION_CODES.Q}"
+                        else -> "Reason: unknown."
+                    }
+                    Log.d(this::class.simpleName, "not using MediaStore. because $reason")
                 }
+                readDirectories(context, this, total, lastModified, others)
             }.catch { t ->
                 Log.w("update", "error:", t)
             }.onCompletion {
@@ -85,25 +105,27 @@ object UpdateLogic {
             .collectIndexed { idx, it ->
                 onProgress(total.get(), idx)
                 try {
-                    //var s = 1L
-                    //while (s <= CONSUMER_OUT_OF_MEM_RETRIES) {
-                    try {
-                        readEPub(context, it, others[it.uri.toString()], dao)?.run {
-                            others.remove(it.uri.toString())
-                        }
-                        return@collectIndexed
-                    } catch (e: OutOfMemoryError) {
-                        Log.e("update", "out of memory [${it.name} / ${it.length / (1024 shl 2)}M]")
-                        //delay(250 * s)
-                        //s += 1
+                    readEPub(context, it, others[it.uri.toString()], dao)?.run {
+                        others.remove(it.uri.toString())
                     }
-                    //}
+                } catch (e: OutOfMemoryError) {
+                    Log.e("update", "out of memory '${it.uri}' [${it.name} / ${it.length / (1024 shl 2)}M]", e)
+                    insertErrorEPubItem(dao, others[it.uri.toString()], it, e)
+                    others.remove(it.uri.toString())
+                } catch (e: FileNotFoundException) {
+                    Log.e("update", "file not found ${it.uri}", e)
+                    insertErrorEPubItem(dao, others[it.uri.toString()], it, e)
+                    others.remove(it.uri.toString())
                 } catch (e: Exception) {
                     Log.w("update", "Epub Error (${it.uri}):", e)
+                    insertErrorEPubItem(dao, others[it.uri.toString()], it, e)
+                    others.remove(it.uri.toString())
                 }
             }
         }
         Log.i("update", "update finished.")
+        Looper.prepare()
+        Toast.makeText(context, "Updated ${total.get()} EBooks.", Toast.LENGTH_SHORT).show()
 
         if (lastModified <= 0)
             dao.delete(others.values)
@@ -120,18 +142,31 @@ object UpdateLogic {
     ) {
         val directories = Setting(context).watchedDirectories
 
-        /*val otherAsync = async {
-            others.keys.forEach {
-                flow.emit(FileWrapper.fromUri(context, it.toUri()))
-            }
-        }*/
         directories.map {
             val directory = FileWrapper.fromUri(context, it.toUri())
             readDirectoryToQueue(flow, total, lastModified, directory) { uri ->
                 others.containsKey(uri.toString())
             }
         }
-        //otherAsync.await()
+    }
+
+    private fun insertErrorEPubItem(dao: EPubItemDAO, other: EPubItem?, file: FileWrapper, e: Throwable) {
+        createItem(
+            other,
+            dao,
+            file.uri,
+            file.name,
+            Date(file.lastModified),
+            file.length,
+            0,
+            file.uri.toString(),
+            file.name + " [ERROR]",
+            "ERROR",
+            null,
+            e.localizedMessage,
+            emptyArray(),
+            emptyArray()
+        )
     }
 
     private suspend fun readDirectoryToQueue(
@@ -146,19 +181,17 @@ object UpdateLogic {
         val files = dir.listFiles(lastModified)
         //Log.d(this::class.simpleName, "\tFound files: %s [size: %d]".format(files, files.size))
 
-        files.map {
+        files.forEach {
             //Log.d(this::class.simpleName, "\tFound file %s".format(it.uri))
-            suspend {
-                when {
-                    isRead(it.uri) -> {}
-                    it.isDirectory -> readDirectoryToQueue(flow, total, lastModified, it, isRead)
-                    it.isFile && it.name.endsWith(".epub", true) -> {
-                        total.incrementAndGet()
-                        flow.emit(it)
-                    }
-                    else -> {}
+            when {
+                isRead(it.uri) -> {}
+                it.isDirectory -> readDirectoryToQueue(flow, total, lastModified, it, isRead)
+                it.isFile && it.name.endsWith(".epub", true) -> {
+                    total.incrementAndGet()
+                    flow.emit(it)
                 }
-            }()
+                else -> {}
+            }
         }
     }
 
@@ -168,64 +201,90 @@ object UpdateLogic {
 
         CONSUMER_ACTIVE_READING.acquire()
         try {
-            val runtime = Runtime.getRuntime()
-            var tries = CONSUMER_OUT_OF_MEM_RETRIES
-            if (file.length >= runtime.maxMemory())
-                throw OutOfMemoryError("Not enough space to read in ${file.name} [${file.length / 1000 / 1000}MB")
-            while (file.length >= runtime.freeMemory()) {
-                delay(10)
-                runtime.gc()
-                tries -= 1
-                if (tries <= 0)
-                    throw OutOfMemoryError("Not enough space to read in ${file.name} [${file.length / 1000 / 1000}MB")
-            }
-
             val v = withContext(Dispatchers.IO) {
-                val fileStream = context.contentResolver.openInputStream(file.uri)
-                val zipStream = ZipInputStream(fileStream)
-                var entry: ZipEntry? = zipStream.nextEntry
-
-                // Cache file
-                try {
-                    val zipMap = HashMap<ZipEntry, ByteArray>()
-                    while (entry != null) {
-                        val data = zipStream.readBytes()
-                        zipMap[entry] = data
-                        zipStream.closeEntry()
-
-                        if (entry.name.endsWith(OPF_EXTENSION, true)) {
-                            return@withContext readEntry(entry, data, other, dao, file) {
-                                if (zipMap.keys.any { k -> k.name == it })
-                                    return@readEntry zipMap[zipMap.keys.first { k -> k.name == it }]
-
-                                var entry2 = entry
-                                while (entry2 != null) {
-                                    val data2 = zipStream.readBytes()
-                                    zipMap[entry2] = data2
-                                    zipStream.closeEntry()
-
-                                    if (entry2.name == it)
-                                        return@readEntry data2
-
-                                    entry2 = zipStream.nextEntry
-                                }
-
-                                return@readEntry null
-                            }
+                when (file.uri.scheme) {
+                    ContentResolver.SCHEME_FILE -> readEntryFromFileUri(context, file, other, dao)
+                    else -> {
+                        val runtime = Runtime.getRuntime()
+                        var tries = CONSUMER_OUT_OF_MEM_RETRIES
+                        if (file.length >= runtime.maxMemory())
+                            throw OutOfMemoryError("Not enough space to read in ${file.name} [${file.length / 1000 / 1000}MB")
+                        while (file.length >= runtime.freeMemory()) {
+                            delay(10)
+                            runtime.gc()
+                            tries -= 1
+                            if (tries <= 0)
+                                throw OutOfMemoryError("Not enough space to read in ${file.name} [${file.length / 1000 / 1000}MB")
                         }
 
-                        entry = zipStream.nextEntry
+                        readEntryFromContentUri(context, file, other, dao)
                     }
-                } finally {
-                    zipStream.close()
-                    fileStream?.close()
                 }
-                null
             }
             return v
         } finally {
             CONSUMER_ACTIVE_READING.release()
         }
+    }
+
+    private fun readEntryFromFileUri(context: Context, file: FileWrapper, other: EPubItem?, dao: EPubItemDAO) : EPubItem?{
+        val zip = ZipFile(file.uri.toFile())
+        val opfEntry = zip.entries().toList().first { it.name.endsWith(OPF_EXTENSION, true) }
+
+        zip.use {
+            return readEntry(
+                opfEntry,
+                zip.getInputStream(opfEntry).readBytes(),
+                other,
+                dao,
+                file
+            ) {
+                zip.getInputStream(zip.getEntry(it)).readBytes()
+            }
+        }
+    }
+
+    private fun readEntryFromContentUri(context: Context, file: FileWrapper, other: EPubItem?, dao: EPubItemDAO) : EPubItem?{
+        val fileStream = context.contentResolver.openInputStream(file.uri)!!
+        val zipStream = ZipInputStream(fileStream)
+        var entry: ZipEntry? = zipStream.nextEntry
+
+        // Cache file
+        try {
+            val zipMap = HashMap<ZipEntry, ByteArray>()
+            while (entry != null) {
+                val data = zipStream.readBytes()
+                zipMap[entry] = data
+                zipStream.closeEntry()
+
+                if (entry.name.endsWith(OPF_EXTENSION, true)) {
+                    return readEntry(entry, data, other, dao, file) {
+                        if (zipMap.keys.any { k -> k.name == it })
+                            return@readEntry zipMap[zipMap.keys.first { k -> k.name == it }]
+
+                        var entry2 = entry
+                        while (entry2 != null) {
+                            val data2 = zipStream.readBytes()
+                            zipMap[entry2] = data2
+                            zipStream.closeEntry()
+
+                            if (entry2.name == it)
+                                return@readEntry data2
+
+                            entry2 = zipStream.nextEntry
+                        }
+
+                        return@readEntry null
+                    }
+                }
+
+                entry = zipStream.nextEntry
+            }
+        } finally {
+            zipStream.close()
+            fileStream?.close()
+        }
+        return null
     }
 
     private fun readEntry(
@@ -287,6 +346,9 @@ object UpdateLogic {
                 val descriptionLines = description.lines()
                 if (descriptionLines.size > DESCRIPTION_MAX_LINES)
                     description = descriptionLines.subList(0, DESCRIPTION_REDUCE_TO_LINES).joinToString("\n")
+                if (description.length > DESCRIPTION_MAX_CHARACTERS)
+                    description = description.substring(0, DESCRIPTION_REDUCE_TO_CHARACTERS)
+
 
                 Log.d(this::class.simpleName, "\tNew description: $description")
             } else

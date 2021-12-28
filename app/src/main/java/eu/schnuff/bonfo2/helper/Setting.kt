@@ -5,16 +5,17 @@ import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
 
 enum class PREFERENCE(val string: String) {
-    PREFERENCE_WATCHED_DIRECTORIES	("watched_directories"),
-    PREFERENCE_LIST_SCROLL_IDX	    ("list_first_item_idx"),
-    PREFERENCE_LIST_FILTER      	("list_filter"),
-    PREFERENCE_SORT_ORDER	        ("sort_order"),
-    PREFERENCE_SORT_BY_FILTER	    ("sort_by_filter"),
-    PREFERENCE_SHOW_SMALL_FILTER	("show_small_filter"),
-    PREFERENCE_SHOW_NSFW_FILTER 	("show_nsfw_filter"),
-    PREFERENCE_MIN_FILE_SIZE	    ("min_file_size"),
-    PREFERENCE_USE_MEDIASTORE       ("developer_use_mediastore"),
-    INTERNAL_LAST_MODIFIED          ("last_modified"),
+    PREFERENCE_WATCHED_DIRECTORIES	    ("watched_directories"),
+    PREFERENCE_LIST_SCROLL_IDX	        ("list_first_item_idx"),
+    PREFERENCE_LIST_FILTER      	    ("list_filter"),
+    PREFERENCE_SORT_ORDER	            ("sort_order"),
+    PREFERENCE_SORT_BY_FILTER	        ("sort_by_filter"),
+    PREFERENCE_SHOW_SMALL_FILTER	    ("show_small_filter"),
+    PREFERENCE_SHOW_NSFW_FILTER 	    ("show_nsfw_filter"),
+    PREFERENCE_MIN_FILE_SIZE	        ("min_file_size"),
+    PREFERENCE_USE_MEDIASTORE           ("developer_use_mediastore"),
+    INTERNAL_LAST_MODIFIED              ("last_modified"),
+    INTERNAL_LAST_MEDIASTORE_VERSION    ("last_media_store_version"),
 }
 
 class Setting(context: Context) : SharedPreferences.OnSharedPreferenceChangeListener {
@@ -64,6 +65,10 @@ class Setting(context: Context) : SharedPreferences.OnSharedPreferenceChangeList
     var lastModified: Long
         get() = pref.getLong(PREFERENCE.INTERNAL_LAST_MODIFIED.string, -1)
         set(value) = pref.edit().putLong(PREFERENCE.INTERNAL_LAST_MODIFIED.string, value).apply()
+
+    var lastMediaStoreVersion: String
+        get() = pref.getString(PREFERENCE.INTERNAL_LAST_MEDIASTORE_VERSION.string, "") ?: ""
+        set(value) = pref.edit().putString(PREFERENCE.INTERNAL_LAST_MEDIASTORE_VERSION.string, value).apply()
 
     var useMediaStore: Boolean
         get() = pref.getBoolean(PREFERENCE.PREFERENCE_USE_MEDIASTORE.string, true)

@@ -13,12 +13,16 @@ import android.webkit.MimeTypeMap
 import androidx.annotation.RequiresApi
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
+import java.io.File
+
+@RequiresApi(Build.VERSION_CODES.R)
+private const val VOLUME = MediaStore.VOLUME_EXTERNAL
 
 @RequiresApi(Build.VERSION_CODES.R)
 class MediaStoreFileWrapper(
     private val context: Context
 ) : FileWrapper {
-    override val uri: Uri = MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL)
+    override val uri: Uri = MediaStore.Files.getContentUri(VOLUME)
     override val name: String
         get() = MediaStore.AUTHORITY
     override val lastModified: Long
@@ -43,7 +47,7 @@ class MediaStoreFileWrapper(
         val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension("epub")
         val selections = mutableMapOf<String, String>()
         if (lastModified > 0)
-            selections["${MediaStore.Files.FileColumns.DATE_MODIFIED} >= ?"] = lastModified.toString()
+            selections["${MediaStore.Files.FileColumns.GENERATION_MODIFIED} > ?"] = lastModified.toString()
 
         if(mimeType != null)
             selections["${MediaStore.Files.FileColumns.MIME_TYPE} = ?"] = mimeType
@@ -54,7 +58,7 @@ class MediaStoreFileWrapper(
             uri,
             arrayOf(
                 MediaStore.Files.FileColumns.DISPLAY_NAME,
-                MediaStore.Files.FileColumns._ID,
+                MediaStore.Files.FileColumns.DATA,
                 MediaStore.Files.FileColumns.DATE_MODIFIED,
                 MediaStore.Files.FileColumns.MIME_TYPE,
                 MediaStore.Files.FileColumns.SIZE,
@@ -62,9 +66,9 @@ class MediaStoreFileWrapper(
             keys.joinToString(" AND "),
             keys.map { selections[it] }.toTypedArray(),
             MediaStore.Files.FileColumns.DATE_MODIFIED + " DESC"
-        )?.let {
+        )?.also {
             val idxName = it.getColumnIndex(MediaStore.Files.FileColumns.DISPLAY_NAME)
-            val idxID = it.getColumnIndex(MediaStore.Files.FileColumns._ID)
+            val idxDATA = it.getColumnIndex(MediaStore.Files.FileColumns.DATA)
             val idxModified = it.getColumnIndex(MediaStore.Files.FileColumns.DATE_MODIFIED)
             val idxMimeType = it.getColumnIndex(MediaStore.Files.FileColumns.MIME_TYPE)
             val idxSize = it.getColumnIndex(MediaStore.Files.FileColumns.SIZE)
@@ -78,21 +82,25 @@ class MediaStoreFileWrapper(
                 //Log.d(this::class.simpleName, "Found file: " + fileName)
                 files.add(DocumentFileWrapper(
                     context,
-                    DocumentFile.fromSingleUri(context,
-                        MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL, it.getLong(idxID))
-                    )!!,
+                    DocumentFile.fromFile(
+                        File(it.getString(idxDATA))
+                    ),
                     fileName,
                     it.getLong(idxModified),
                     it.getString(idxMimeType),
                     it.getLong(idxSize)
                 ))
             }
-            it.close()
-        }
+        }?.close()
         return files
     }
 
     override fun delete() {
         TODO("Not yet implemented")
+    }
+
+    companion object {
+        fun getVersion(context: Context) = MediaStore.getVersion(context, VOLUME)
+        fun getGeneration(context: Context) = MediaStore.getGeneration(context, VOLUME)
     }
 }

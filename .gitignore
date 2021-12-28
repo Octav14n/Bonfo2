@@ -254,6 +254,7 @@ hs_err_pid*
 *.ipr
 *~
 *.swp
+local.properties
 
 # Keystore files
 *.jks

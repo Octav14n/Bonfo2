@@ -162,7 +162,9 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
         ePubViewModel.get().observe(this) { list ->
             adapter.submitList(list)
         }
-        historyViewModel.get().observe(this, { list -> adapter.lastOpened = list.map { it.item } })
+        historyViewModel.get().observe(this) {
+            list -> adapter.lastOpened = list.map { it.item }
+        }
         binding.list.adapter = adapter
 
         bindService(Intent(this, UpdateService::class.java), this, 0)
@@ -190,14 +192,14 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
         super.onDestroy()
     }
 
-    fun onRefresh(v: View) = onRefresh()
-    override fun onRefresh() = withFilePermission {
+    //fun onRefresh(v: View) = onRefresh()
+    override fun onRefresh(): Unit = withFilePermission {
         val permissions = packageManager
             .getPackageInfo(packageName, PackageManager.GET_PERMISSIONS)
             .requestedPermissions!!
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
             permissions.contains(Manifest.permission.MANAGE_EXTERNAL_STORAGE) &&
-            !setting.useMediaStore &&
+            //!setting.useMediaStore &&
             !Environment.isExternalStorageManager()
         ) {
             //request for the permission

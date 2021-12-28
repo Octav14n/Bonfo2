@@ -3,12 +3,12 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
 
 android {
-    compileSdkVersion 30
-    buildToolsVersion "30.0.2"
+    compileSdkVersion 31
+    buildToolsVersion "30.0.3"
     defaultConfig {
         applicationId "eu.schnuff.bonfo2"
         minSdkVersion 16
-        targetSdkVersion 30
+        targetSdkVersion 31
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -59,20 +59,23 @@ dependencies {
     def preferenceVersion = "1.1.1"
     def archLifecycleVersion = '2.2.0'
     def materialVersion = '1.4.0'
-    def coroutines = '1.3.8'
-    def workVersion = '2.5.0'
+    def coroutines = '1.5.2'
+    def workVersion = '2.7.1'
     def folderVersion = '3.3.0'
     def composeVersion = '1.0.0'
 
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
-    implementation 'androidx.appcompat:appcompat:1.3.1'
-    implementation 'androidx.core:core-ktx:1.6.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.0'
+    implementation 'androidx.appcompat:appcompat:1.4.0'
+    implementation 'androidx.core:core-ktx:1.7.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.2'
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
-    testImplementation 'junit:junit:4.13.1'
+    testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test:runner:1.4.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+
+    // AppIntro
+    //implementation 'com.github.AppIntro:AppIntro:6.1.0'
 
     // RecyclerView
     implementation 'androidx.recyclerview:recyclerview:1.2.1'
@@ -85,7 +88,7 @@ dependencies {
 
     // Lifecycle components
     implementation "androidx.lifecycle:lifecycle-extensions:$archLifecycleVersion"
-    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.3.1"
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.0'
 
     // Kotlin components
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
@@ -107,7 +110,7 @@ dependencies {
     implementation "androidx.work:work-runtime-ktx:$workVersion"
 
     // Permission library
-    implementation 'com.karumi:dexter:6.1.0'
+    implementation 'com.karumi:dexter:6.2.3'
 
     // Folder library
     implementation "com.afollestad.material-dialogs:core:$folderVersion"

@@ -24,9 +24,11 @@
         <activity
                 android:name=".settings.SettingsMain"
                 android:label="@string/title_activity_settings_main"
-                android:parentActivityName=".MainActivity" tools:targetApi="jelly_bean">
+                android:parentActivityName=".MainActivity"
+                android:exported="false"
+                tools:targetApi="jelly_bean">
         </activity>
-        <activity android:name=".MainActivity">
+        <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <action android:name="android.intent.action.VIEW"/>

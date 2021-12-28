@@ -10,7 +10,9 @@ import eu.schnuff.bonfo2.data.ePubItem.EPubItem
 import eu.schnuff.bonfo2.filter.Filter
 import eu.schnuff.bonfo2.helper.SortBy
 import eu.schnuff.bonfo2.helper.SortOrder
+import kotlinx.coroutines.*
 import java.util.*
+import kotlin.concurrent.thread
 
 class BookAdapter(
     private val onClickListener: (item: EPubItem) -> Unit = {},
@@ -30,6 +32,7 @@ class BookAdapter(
         }
     lateinit var sortBy: SortBy
     lateinit var sortOrder: SortOrder
+    private var refreshJob: Thread? = null
 
     init {
         filter.addChangeListener {
@@ -59,12 +62,15 @@ class BookAdapter(
         updateFiltered: Boolean = false,
         updateSort: Boolean = false
     ) {
-        var list: List<EPubItem> = if (updateFiltered) filter.apply(originalList) else appliedList
-        if (updateSort)
-            list = sort(list)
+        //refreshJob?.stop()
+        refreshJob = thread {
+            var list: List<EPubItem> = if (updateFiltered) filter.apply(originalList) else appliedList
+            if (updateSort)
+                list = sort(list)
 
-        if (list !== currentList)
-            super.submitList(list)
+            if (list !== currentList)
+                super.submitList(list)
+        }
     }
 
     fun filter(filter: String) {

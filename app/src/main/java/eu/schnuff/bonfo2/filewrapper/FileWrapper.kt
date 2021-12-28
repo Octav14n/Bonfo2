@@ -25,6 +25,9 @@ interface FileWrapper {
     
 
     companion object {
+        fun getMediaStoreVersion(context: Context) = MediaStoreFileWrapper.getVersion(context)
+        fun getMediaStoreGeneration(context: Context) = MediaStoreFileWrapper.getGeneration(context)
+
         fun fromUri(context: Context, uri: Uri) : FileWrapper {
             return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
                 documentFileFromUri(context, uri)

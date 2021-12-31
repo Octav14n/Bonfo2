@@ -39,7 +39,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
           release_name: PreRelease
-          tag_name: ${{ github.ref }} Pre
+          tag_name: ${{ github.ref }}Pre
           prerelease: true
       - name: Upload Release APK
         id: upload_release_asset

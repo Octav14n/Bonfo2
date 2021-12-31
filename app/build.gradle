@@ -4,7 +4,7 @@ apply plugin: 'kotlin-kapt'
 
 android {
     compileSdkVersion 31
-    buildToolsVersion "30.0.3"
+    buildToolsVersion '31.0.0'
     defaultConfig {
         applicationId "eu.schnuff.bonfo2"
         minSdkVersion 16
@@ -55,17 +55,16 @@ android {
 }
 
 dependencies {
-    def roomVersion = "2.3.0"
+    def roomVersion = '2.4.0'
     def preferenceVersion = "1.1.1"
     def archLifecycleVersion = '2.2.0'
     def materialVersion = '1.4.0'
-    def coroutines = '1.5.2'
+    def coroutines = '1.6.0'
     def workVersion = '2.7.1'
     def folderVersion = '3.3.0'
-    def composeVersion = '1.0.0'
+    //def composeVersion = '1.0.0'
 
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
     implementation 'androidx.appcompat:appcompat:1.4.0'
     implementation 'androidx.core:core-ktx:1.7.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.2'
@@ -91,7 +90,7 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.0'
 
     // Kotlin components
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
+    //implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
     api "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines"
     api "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines"
 

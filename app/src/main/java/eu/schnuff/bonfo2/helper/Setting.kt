@@ -16,6 +16,7 @@ enum class PREFERENCE(val string: String) {
     PREFERENCE_USE_MEDIASTORE           ("developer_use_mediastore"),
     INTERNAL_LAST_MODIFIED              ("last_modified"),
     INTERNAL_LAST_MEDIASTORE_VERSION    ("last_media_store_version"),
+    INTERNAL_LAST_MEDIASTORE_GENERATION ("last_media_store_generation"),
 }
 
 class Setting(context: Context) : SharedPreferences.OnSharedPreferenceChangeListener {
@@ -66,8 +67,12 @@ class Setting(context: Context) : SharedPreferences.OnSharedPreferenceChangeList
         get() = pref.getLong(PREFERENCE.INTERNAL_LAST_MODIFIED.string, -1)
         set(value) = pref.edit().putLong(PREFERENCE.INTERNAL_LAST_MODIFIED.string, value).apply()
 
-    var lastMediaStoreVersion: String
-        get() = pref.getString(PREFERENCE.INTERNAL_LAST_MEDIASTORE_VERSION.string, "") ?: ""
+    var lastModifiedMediaGeneration: Long
+        get() = pref.getLong(PREFERENCE.INTERNAL_LAST_MEDIASTORE_GENERATION.string, -1)
+        set(value) = pref.edit().putLong(PREFERENCE.INTERNAL_LAST_MEDIASTORE_GENERATION.string, value).apply()
+
+    var lastMediaStoreVersion: String?
+        get() = pref.getString(PREFERENCE.INTERNAL_LAST_MEDIASTORE_VERSION.string, null).takeIf { it != "" }
         set(value) = pref.edit().putString(PREFERENCE.INTERNAL_LAST_MEDIASTORE_VERSION.string, value).apply()
 
     var useMediaStore: Boolean

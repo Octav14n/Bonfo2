@@ -19,6 +19,11 @@ import java.io.File
 private const val VOLUME = MediaStore.VOLUME_EXTERNAL
 
 @RequiresApi(Build.VERSION_CODES.R)
+const val MODIFIED_COLUMN = MediaStore.Files.FileColumns.DATE_MODIFIED
+@RequiresApi(Build.VERSION_CODES.R)
+const val GENERATION_COLUMN = MediaStore.Files.FileColumns.GENERATION_MODIFIED
+
+@RequiresApi(Build.VERSION_CODES.R)
 class MediaStoreFileWrapper(
     private val context: Context
 ) : FileWrapper {
@@ -43,11 +48,12 @@ class MediaStoreFileWrapper(
     }
 
     override fun listFiles(lastModified: Long): Collection<FileWrapper> {
+        Log.d(this::class.simpleName, "listing files newer than $lastModified, using $MODIFIED_COLUMN DESC.")
         val files = mutableListOf<FileWrapper>()
         val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension("epub")
         val selections = mutableMapOf<String, String>()
         if (lastModified > 0)
-            selections["${MediaStore.Files.FileColumns.GENERATION_MODIFIED} > ?"] = lastModified.toString()
+            selections["$GENERATION_COLUMN > ?"] = lastModified.toString()
 
         if(mimeType != null)
             selections["${MediaStore.Files.FileColumns.MIME_TYPE} = ?"] = mimeType
@@ -59,17 +65,17 @@ class MediaStoreFileWrapper(
             arrayOf(
                 MediaStore.Files.FileColumns.DISPLAY_NAME,
                 MediaStore.Files.FileColumns.DATA,
-                MediaStore.Files.FileColumns.DATE_MODIFIED,
+                MODIFIED_COLUMN,
                 MediaStore.Files.FileColumns.MIME_TYPE,
                 MediaStore.Files.FileColumns.SIZE,
             ),
             keys.joinToString(" AND "),
             keys.map { selections[it] }.toTypedArray(),
-            MediaStore.Files.FileColumns.DATE_MODIFIED + " DESC"
+            "$MODIFIED_COLUMN DESC"
         )?.also {
             val idxName = it.getColumnIndex(MediaStore.Files.FileColumns.DISPLAY_NAME)
             val idxDATA = it.getColumnIndex(MediaStore.Files.FileColumns.DATA)
-            val idxModified = it.getColumnIndex(MediaStore.Files.FileColumns.DATE_MODIFIED)
+            val idxModified = it.getColumnIndex(MODIFIED_COLUMN)
             val idxMimeType = it.getColumnIndex(MediaStore.Files.FileColumns.MIME_TYPE)
             val idxSize = it.getColumnIndex(MediaStore.Files.FileColumns.SIZE)
 

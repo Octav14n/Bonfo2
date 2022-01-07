@@ -1,5 +1,6 @@
 package eu.schnuff.bonfo2.settings
 
+import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.Intent
 import android.os.Build
@@ -84,6 +85,7 @@ class SettingsMain : AppCompatActivity() {
             }
         }
 
+        @SuppressLint("WrongConstant")
         @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
         override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
             super.onActivityResult(requestCode, resultCode, data)
@@ -104,7 +106,11 @@ class SettingsMain : AppCompatActivity() {
         override fun onPreferenceTreeClick(preference: Preference?): Boolean {
             when (preference?.key) {
                 "developer_items_empty" -> thread { AppDatabase.getDatabase(requireContext()).ePubItemDao().devDeleteAll() }
-                "reset_last_modified" -> setting.lastModified = -1
+                "reset_last_modified" -> {
+                    setting.lastModified = -1
+                    setting.lastModifiedMediaGeneration = -1
+                    setting.lastMediaStoreVersion = null
+                }
                 else -> return false
             }
             return true

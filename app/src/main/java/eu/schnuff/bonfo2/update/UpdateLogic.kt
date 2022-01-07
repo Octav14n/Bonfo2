@@ -5,8 +5,6 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.os.Looper
-import android.provider.DocumentsContract
-import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.core.net.toFile
@@ -71,18 +69,20 @@ object UpdateLogic {
         Log.d(this::class.simpleName, "Only using files newer than $lastModified")
 
         val total = AtomicInteger(0)
-        var useMediaStore = false
+        var newMediaStoreVersion: String? = null
+        var newMediaStoreGeneration: Long? = null
 
         runBlocking {
             flow {
                 if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q && setting.useMediaStore) {
-                    Log.d(this::class.simpleName, "using MediaStore.")
-                    useMediaStore = true
                     val directory = FileWrapper.mediaStore(context)
-                    val files = if (setting.lastMediaStoreVersion != FileWrapper.getMediaStoreVersion(context)) {
-                        directory.listFiles(lastModified)
-                    } else {
-                        directory.listFiles()
+                    val mediaStoreVersion = setting.lastMediaStoreVersion
+                    val mediaStoreGeneration = setting.lastModifiedMediaGeneration
+                    newMediaStoreVersion = FileWrapper.getMediaStoreVersion(context)
+                    newMediaStoreGeneration = FileWrapper.getMediaStoreGeneration(context)
+                    val files = when (mediaStoreVersion) {
+                        FileWrapper.getMediaStoreVersion(context) -> directory.listFiles(mediaStoreGeneration)
+                        else -> directory.listFiles()
                     }
                     total.set(files.size)
                     files.forEach { emit(it) }
@@ -131,6 +131,10 @@ object UpdateLogic {
             dao.delete(others.values)
         onComplete()
         setting.lastModified = dao.getLastModified()
+        if (newMediaStoreVersion != null)
+            setting.lastMediaStoreVersion = newMediaStoreVersion
+        if (newMediaStoreGeneration != null)
+            setting.lastModifiedMediaGeneration = newMediaStoreGeneration as Long
     }
 
     private suspend fun readDirectories(

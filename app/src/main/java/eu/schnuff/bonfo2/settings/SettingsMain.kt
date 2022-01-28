@@ -103,8 +103,8 @@ class SettingsMain : AppCompatActivity() {
             }
         }
 
-        override fun onPreferenceTreeClick(preference: Preference?): Boolean {
-            when (preference?.key) {
+        override fun onPreferenceTreeClick(preference: Preference): Boolean {
+            when (preference.key) {
                 "developer_items_empty" -> thread { AppDatabase.getDatabase(requireContext()).ePubItemDao().devDeleteAll() }
                 "reset_last_modified" -> {
                     setting.lastModified = -1

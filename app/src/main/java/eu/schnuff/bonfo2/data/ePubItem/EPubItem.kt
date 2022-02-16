@@ -49,12 +49,12 @@ data class EPubItem(
     val name get() = if (fandom !== null) "$fandom - $title" else title
     override fun toString(): String = name
 
-    fun contains(str: String): Boolean {
-        if (name.contains(str, true)) return true
-        if (author?.contains(str, true) == true) return true
-        if (description?.contains(str, true) == true) return true
-        if (genres.any { s -> s.contains(str, true) }) return true
-        if (characters.any { s -> s.contains(str, true) }) return true
+    fun contains(str: Regex): Boolean {
+        if (str.containsMatchIn(name)) return true
+        if (str.containsMatchIn(author ?: "")) return true
+        if (str.containsMatchIn(description ?: "")) return true
+        if (genres.any { s -> str.containsMatchIn(s) }) return true
+        if (characters.any { s -> str.containsMatchIn(s) }) return true
         return false
     }
 

@@ -13,7 +13,8 @@ internal object EmptySearchFilter: SearchFilter {
 }
 
 internal class StringSearchFilter(private val s: String) : SearchFilter {
-    override fun applies(item: EPubItem) = item.contains(s)
+    private val r = s.toRegex(RegexOption.IGNORE_CASE)
+    override fun applies(item: EPubItem) = item.contains(r)
     override fun getStrings() = setOf(s)
 }
 

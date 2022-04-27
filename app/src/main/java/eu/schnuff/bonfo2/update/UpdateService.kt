@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.os.Binder
 import android.os.Build
+import android.os.Build.VERSION
+import android.os.Build.VERSION_CODES
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
@@ -70,9 +72,9 @@ class UpdateService : LifecycleService() {
         createNotificationChannel()
         // Create notification default intent.
         val intent = Intent(this, MainActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(this, 0, intent, 0)
+        val pendingIntent = PendingIntent.getActivity(this, 0, intent, if(VERSION.SDK_INT >= VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
         val abortIntent = PendingIntent.getService(this, 0, Intent(this, this::class.java)
-                .setAction(ACTION_ABORT), 0)
+                .setAction(ACTION_ABORT), if(VERSION.SDK_INT >= VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
 
         // Create notification builder.
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)

@@ -172,8 +172,11 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
 
     override fun onPause() {
         // Save UI user input
-        setting.listScrollIdx = (binding.list.layoutManager!! as LinearLayoutManager).findFirstCompletelyVisibleItemPosition()
-        setting.filter = filter
+        try {
+            setting.filter = filter
+            setting.listScrollIdx =
+                (binding.list.layoutManager!! as LinearLayoutManager).findFirstCompletelyVisibleItemPosition()
+        } catch (_: Exception) {}
         super.onPause()
     }
 

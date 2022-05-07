@@ -10,7 +10,7 @@ import eu.schnuff.bonfo2.filter.setHighlightedText
 import kotlin.math.min
 
 
-const val HIGHLIGHT = "<font color='%s'>$1</font>"
+const val HIGHLIGHT = "<font color='%s'>%s</font>"
 const val STROKE_WIDTH = 8
 const val LIST_MAX_SIZE = 25
 

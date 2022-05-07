@@ -67,8 +67,8 @@ class Filter {
 }
 
 fun TextView.setHighlightedText(s: String?, filter: Filter, HIGHLIGHT_COLORS: Array<Int>, formattedBy: Int? = null) {
-    this.setHighlightedText(s, filter.search.getStrings(), HIGHLIGHT_COLORS, formattedBy)
+    this.setHighlightedText(s, filter.search.getRegexes(), HIGHLIGHT_COLORS, formattedBy)
 }
 fun TextView.setHighlightedText(s: Array<String>, filter: Filter, HIGHLIGHT_COLORS: Array<Int>, formattedBy: Int? = null) {
-    this.setHighlightedText(s, filter.search.getStrings(), HIGHLIGHT_COLORS, formattedBy)
+    this.setHighlightedText(s, filter.search.getRegexes(), HIGHLIGHT_COLORS, formattedBy)
 }

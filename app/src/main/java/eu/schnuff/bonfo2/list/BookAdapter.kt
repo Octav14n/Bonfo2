@@ -10,7 +10,6 @@ import eu.schnuff.bonfo2.data.ePubItem.EPubItem
 import eu.schnuff.bonfo2.filter.Filter
 import eu.schnuff.bonfo2.helper.SortBy
 import eu.schnuff.bonfo2.helper.SortOrder
-import kotlinx.coroutines.*
 import java.util.*
 import kotlin.concurrent.thread
 
@@ -115,7 +114,7 @@ class BookAdapter(
     companion object {
         private val DIFF = object : DiffUtil.ItemCallback<EPubItem>() {
             override fun areItemsTheSame(oldItem: EPubItem, newItem: EPubItem): Boolean {
-                return oldItem == newItem
+                return oldItem.filePathHash == newItem.filePathHash
             }
 
             override fun areContentsTheSame(oldItem: EPubItem, newItem: EPubItem): Boolean {

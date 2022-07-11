@@ -27,6 +27,8 @@ data class EPubItem(
     val size: String
     @Ignore
     val webUrl: String?
+    @Ignore
+    val filePathHash = filePath.hashCode()
 
     init {
         val b = fileSize

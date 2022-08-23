@@ -64,10 +64,14 @@ class BookAdapter(
         //refreshJob?.stop()
         refreshJob = thread {
             var list: List<EPubItem> = if (updateFiltered) filter.apply(originalList) else appliedList
-            if (updateSort)
+            if (updateSort) {
                 list = sort(list)
-
-            if (list !== currentList)
+                if (list !== currentList)
+                    if (currentList.size > 100)
+                        super.submitList(emptyList()) { super.submitList(list) }
+                    else
+                        super.submitList(list)
+            } else if (list !== currentList)
                 super.submitList(list)
         }
     }

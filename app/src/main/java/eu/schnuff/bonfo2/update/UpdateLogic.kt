@@ -34,7 +34,7 @@ import javax.xml.xpath.XPathFactory
 
 const val DESCRIPTION_MAX_LINES = 30
 const val DESCRIPTION_REDUCE_TO_LINES = 15
-const val DESCRIPTION_MAX_CHARACTERS = DESCRIPTION_MAX_LINES * 10000
+const val DESCRIPTION_MAX_CHARACTERS = DESCRIPTION_MAX_LINES * 1000
 const val DESCRIPTION_REDUCE_TO_CHARACTERS = DESCRIPTION_MAX_CHARACTERS / 2
 
 object UpdateLogic {
@@ -419,6 +419,7 @@ object UpdateLogic {
         if (other != null) {
             dao.update(item)
         } else {
+            dao.delete(item.filePath)
             dao.insert(item)
         }
         return item

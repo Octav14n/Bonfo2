@@ -26,6 +26,9 @@ interface EPubItemDAO {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun save(vararg ePubItem: EPubItem)
 
+    @Query("DELETE FROM epubitem WHERE filePath = :filePath")
+    fun delete(filePath: String)
+
     @Delete
     fun delete(ePubItem: EPubItem)
 

@@ -35,7 +35,7 @@ class BookAdapter(
 
     init {
         filter.addChangeListener {
-            refresh(updateFiltered = true)
+            refresh(reason = RefreshReason.CHANGE_FILTER)
         }
         BookItem.Filter = this.filter
     }
@@ -45,8 +45,7 @@ class BookAdapter(
             return
         originalList = sort(list)
         refresh(
-            updateFiltered = true,
-            updateSort = true
+            reason = RefreshReason.NEW_LIST
         )
     }
 
@@ -58,16 +57,15 @@ class BookAdapter(
 
     private fun refresh(
         appliedList: List<EPubItem> = currentList,
-        updateFiltered: Boolean = false,
-        updateSort: Boolean = false
+        reason: RefreshReason = RefreshReason.NEW_LIST
     ) {
         //refreshJob?.stop()
         refreshJob = thread {
-            var list: List<EPubItem> = if (updateFiltered) filter.apply(originalList) else appliedList
-            if (updateSort) {
+            var list: List<EPubItem> = if (reason == RefreshReason.NEW_LIST || reason == RefreshReason.CHANGE_FILTER) filter.apply(originalList) else appliedList
+            if (reason == RefreshReason.NEW_LIST || reason == RefreshReason.CHANGE_SORT) {
                 list = sort(list)
                 if (list !== currentList)
-                    if (currentList.size > 100)
+                    if (reason == RefreshReason.CHANGE_SORT && currentList.size > 100)
                         super.submitList(emptyList()) { super.submitList(list) }
                     else
                         super.submitList(list)
@@ -84,7 +82,7 @@ class BookAdapter(
         sortBy = by
         sortOrder = order
         originalList = sort(null)
-        refresh(updateSort = true)
+        refresh(reason = RefreshReason.CHANGE_SORT)
     }
     private fun sort(list: List<EPubItem>?): List<EPubItem> {
         val comparator = when (sortBy) {
@@ -113,6 +111,12 @@ class BookAdapter(
 
     override fun onBindViewHolder(holder: BookItem, position: Int) {
         holder.bindTo(getItem(position))
+    }
+
+    private enum class RefreshReason {
+        NEW_LIST,
+        CHANGE_SORT,
+        CHANGE_FILTER
     }
 
     companion object {

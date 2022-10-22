@@ -4,7 +4,7 @@ apply plugin: 'kotlin-kapt'
 
 android {
     compileSdkVersion 33
-    buildToolsVersion '31.0.0'
+    buildToolsVersion '33.0.0'
     defaultConfig {
         applicationId "eu.schnuff.bonfo2"
         minSdkVersion 16
@@ -63,16 +63,16 @@ dependencies {
     def roomVersion = '2.+'
     def preferenceVersion = "1.2.0"
     def archLifecycleVersion = '2.2.0'
-    def materialVersion = '1.+'
-    def coroutines = '1.+'
+    def materialVersion = '1.4.0'
+    def coroutines = '1.6.4'
     def workVersion = '2.7.1'
     def folderVersion = '3.3.0'
     //def composeVersion = '1.0.0'
 
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'androidx.appcompat:appcompat:1.+'
-    implementation 'androidx.core:core-ktx:1.+'
-    implementation 'androidx.constraintlayout:constraintlayout:2.+'
+    implementation 'androidx.appcompat:appcompat:1.5.1'
+    implementation 'androidx.core:core-ktx:1.9.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test:runner:1.4.0'
@@ -91,11 +91,11 @@ dependencies {
     androidTestImplementation "androidx.room:room-testing:$roomVersion"
     implementation "androidx.room:room-paging:$roomVersion"
     // paging
-    implementation 'androidx.paging:paging-runtime-ktx:3.+'
+    implementation 'androidx.paging:paging-runtime-ktx:3.1.1'
 
     // Lifecycle components
     implementation "androidx.lifecycle:lifecycle-extensions:$archLifecycleVersion"
-    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.+'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.1'
 
     // Kotlin components
     //implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"

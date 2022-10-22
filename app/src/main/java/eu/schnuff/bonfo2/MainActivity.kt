@@ -17,9 +17,10 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.core.net.toUri
+import androidx.lifecycle.lifecycleScope
+import androidx.paging.LoadState
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import androidx.work.impl.utils.PackageManagerHelper
 import com.afollestad.materialdialogs.utils.MDUtil.getStringArray
 import eu.schnuff.bonfo2.data.ePubItem.EPubItem
 import eu.schnuff.bonfo2.data.ePubItem.EPubViewModel
@@ -34,6 +35,8 @@ import eu.schnuff.bonfo2.helper.withFilePermission
 import eu.schnuff.bonfo2.list.BookAdapter
 import eu.schnuff.bonfo2.settings.SettingsMain
 import eu.schnuff.bonfo2.update.UpdateService
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 const val REFRESHING_RESET_TIME = 750L
 
@@ -49,14 +52,6 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
     private var updateService: UpdateService? = null
     private val adapter = BookAdapter(
         onClickListener = this::onListItemClick,
-        onListChanged = { _, newList ->
-            if (newList.isNotEmpty() && !firstListObserved) {
-                firstListObserved = true
-                binding.listClear.visibility = View.GONE
-                binding.list.visibility = View.VISIBLE
-                (binding.list.layoutManager!! as LinearLayoutManager).scrollToPosition(setting.listScrollIdx)
-            }
-        },
         onLongClickListener = { item ->
             AlertDialog.Builder(this).apply {
                 setItems(R.array.actions) { _, i -> when (i) {
@@ -138,6 +133,7 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
         binding = ActivityMainBinding.inflate(layoutInflater)
         ePubViewModel = EPubViewModel(application)
         historyViewModel = HistoryViewModel(application)
+        adapter.init(this)
         setting = Setting(this).also {
             adapter.filter(it.filter)
         }
@@ -159,8 +155,22 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
         adapter.filter(setting.filter)
 
         binding.refresh.setOnRefreshListener(this)
-        ePubViewModel.get().observe(this) { list ->
-            adapter.submitList(list)
+        //ePubViewModel.get().observe(this) { list ->
+        //    adapter.submitList(list)
+        //}
+        lifecycleScope.launch {
+            launch {
+                adapter.loadStateFlow.collectLatest {
+                    binding.refresh.isRefreshing = it.refresh is LoadState.Loading
+                    if (it.refresh !is LoadState.Loading && adapter.itemCount > 0) {
+                        firstListObserved = true
+                        binding.listClear.visibility = View.GONE
+                        binding.list.visibility = View.VISIBLE
+                        (binding.list.layoutManager!! as LinearLayoutManager).scrollToPosition(setting.listScrollIdx)
+                    }
+                }
+            }
+            launch { adapter.fetchData() }
         }
         historyViewModel.get().observe(this) {
             list -> adapter.lastOpened = list.map { it.item }
@@ -250,7 +260,9 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
     private fun applyFilterFromSetting() {
         adapter.filter.minFileSize = if (setting.showSmall) -1 else setting.minFileSize
         adapter.filter.excludeGenres = if (setting.showNsfw) emptySet() else this.getStringArray(R.array.nsfw_genres).toSet()
-        adapter.setSort(setting.sortBy, setting.sortOrder)
+        lifecycleScope.launch {
+            adapter.setSort(setting.sortBy, setting.sortOrder)
+        }
     }
 
     override fun onQueryTextSubmit(query: String?): Boolean { return false }

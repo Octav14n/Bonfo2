@@ -1,6 +1,8 @@
 package eu.schnuff.bonfo2.filter
 
 import android.widget.TextView
+import androidx.paging.PagingData
+import androidx.paging.filter
 import eu.schnuff.bonfo2.data.ePubItem.EPubItem
 import eu.schnuff.bonfo2.helper.setHighlightedText
 import java.util.*
@@ -31,7 +33,7 @@ class Filter {
             notifyChangeListener()
         }
 
-    fun apply(items: List<EPubItem>): List<EPubItem> {
+    fun apply(items: PagingData<EPubItem>): PagingData<EPubItem> {
         return items.filter {
             (minFileSize == -1 || it.fileSize >= minFileSize) &&
             (excludeGenres.isEmpty() || !it.genres.any { it.lowercase(Locale.getDefault()) in excludeGenres }) &&

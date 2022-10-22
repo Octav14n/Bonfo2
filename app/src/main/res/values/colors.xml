@@ -7,6 +7,7 @@
     <color name="colorBookBackground">#000</color>
     <color name="colorBookTitle">#BCFFA0</color>
     <color name="colorBookSubjects">#0C7700</color>
+    <color name="colorBookPlaceholder">#333</color>
     <array name="list_strokes">
         <item>#000</item>
         <item>#F00</item>

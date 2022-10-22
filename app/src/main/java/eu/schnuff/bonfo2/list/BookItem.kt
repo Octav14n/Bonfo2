@@ -31,7 +31,16 @@ class BookItem(
         }
 
     private fun redraw(filter: Boolean = false, opened: Boolean = false) {
-        val value = this.boundTo ?: return
+        val value = this.boundTo
+        if (value == null) {
+            binding.bookCard.cardElevation = 0f
+            binding.listPlaceholder.visibility = View.VISIBLE
+            binding.listLayout.visibility = View.GONE
+            return
+        }
+
+        binding.listPlaceholder.visibility = View.GONE
+        binding.listLayout.visibility = View.VISIBLE
 
         if (opened) {
             val idx = LastOpened.indexOf(value.url)
@@ -78,7 +87,7 @@ class BookItem(
         }
     }
 
-    fun bindTo(item: EPubItem) {
+    fun bindTo(item: EPubItem?) {
         boundTo = item
     }
 

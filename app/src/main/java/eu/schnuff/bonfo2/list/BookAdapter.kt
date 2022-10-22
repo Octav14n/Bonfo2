@@ -1,25 +1,30 @@
 package eu.schnuff.bonfo2.list
 
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.paging.*
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.ListAdapter
 import eu.schnuff.bonfo2.R
+import eu.schnuff.bonfo2.data.AppDatabase
 import eu.schnuff.bonfo2.data.ePubItem.EPubItem
+import eu.schnuff.bonfo2.data.ePubItem.EPubItemDAO
 import eu.schnuff.bonfo2.filter.Filter
 import eu.schnuff.bonfo2.helper.SortBy
 import eu.schnuff.bonfo2.helper.SortOrder
-import java.util.*
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.runBlocking
 import kotlin.concurrent.thread
 
 class BookAdapter(
     private val onClickListener: (item: EPubItem) -> Unit = {},
     private val onLongClickListener: (item: EPubItem) -> Unit = {},
-    private val onListChanged: (previousList: MutableList<EPubItem>, currentList: MutableList<EPubItem>) -> Unit = {_,_->}
-) : ListAdapter<EPubItem, BookItem>(DIFF) {
+    private val onListChanged: (adapter: BookAdapter, currentList: PagingData<EPubItem>) -> Unit = {_,_->}
+) : PagingDataAdapter<EPubItem, BookItem>(DIFF) {
     val filter = Filter()
-    private var originalList: List<EPubItem> = mutableListOf()
+    private var originalList: PagingData<EPubItem> = PagingData.empty()
     var lastOpened : List<String> = listOf()
         set(value) {
             if (value == field) return
@@ -27,76 +32,60 @@ class BookAdapter(
             BookItem.LastOpened = value
 
             if (sortBy == SortBy.ACCESS)
-                sort(null)
+                thread { runBlocking { refresh(null) } }
         }
-    lateinit var sortBy: SortBy
-    lateinit var sortOrder: SortOrder
-    private var refreshJob: Thread? = null
+    private var sortBy = SortBy.CREATION
+    private var sortOrder = SortOrder.DESC
+    private lateinit var dao: EPubItemDAO
 
     init {
         filter.addChangeListener {
-            refresh(reason = RefreshReason.CHANGE_FILTER)
+            thread { runBlocking {
+                refresh(originalList)
+            } }
         }
         BookItem.Filter = this.filter
     }
 
-    override fun submitList(list: List<EPubItem>?) {
-        if (list == null)
-            return
-        originalList = sort(list)
-        refresh(
-            reason = RefreshReason.NEW_LIST
-        )
+    fun init(context: Context) {
+        dao = AppDatabase.getDatabase(context).ePubItemDao()
     }
 
-    override fun onCurrentListChanged(previousList: MutableList<EPubItem>, currentList: MutableList<EPubItem>) {
-        super.onCurrentListChanged(previousList, currentList)
-        if (currentList.isNotEmpty())
-            onListChanged(previousList, currentList)
-    }
-
-    private fun refresh(
-        appliedList: List<EPubItem> = currentList,
-        reason: RefreshReason = RefreshReason.NEW_LIST
-    ) {
-        //refreshJob?.stop()
-        refreshJob = thread {
-            var list: List<EPubItem> = if (reason == RefreshReason.NEW_LIST || reason == RefreshReason.CHANGE_FILTER) filter.apply(originalList) else appliedList
-            if (reason == RefreshReason.NEW_LIST || reason == RefreshReason.CHANGE_SORT) {
-                list = sort(list)
-                if (list !== currentList)
-                    if (reason == RefreshReason.CHANGE_SORT && currentList.size > 100)
-                        super.submitList(emptyList()) { super.submitList(list) }
-                    else
-                        super.submitList(list)
-            } else if (list !== currentList)
-                super.submitList(list)
+    suspend fun fetchData() {
+        coroutineScope {
+            Pager(
+                PagingConfig(
+                    initialLoadSize = 20,
+                    pageSize = 1000,
+                    prefetchDistance = 100000,
+                )
+            ) {
+                dao.getAll(sortBy, sortOrder)
+            }.flow.cachedIn(this).collectLatest {
+                refresh(it)
+            }
         }
+    }
+
+    private suspend fun refresh(
+        appliedList: PagingData<EPubItem>?
+    ) {
+        val list = filter.apply(originalList)
+        if (appliedList != null) {
+            originalList = appliedList
+            onListChanged(this, list)
+        }
+        super.submitData(list)
     }
 
     fun filter(filter: String) {
         this.filter.searchString = filter
     }
 
-    fun setSort(by: SortBy, order: SortOrder) {
+    suspend fun setSort(by: SortBy, order: SortOrder) {
         sortBy = by
         sortOrder = order
-        originalList = sort(null)
-        refresh(reason = RefreshReason.CHANGE_SORT)
-    }
-    private fun sort(list: List<EPubItem>?): List<EPubItem> {
-        val comparator = when (sortBy) {
-            SortBy.ACCESS -> compareByDescending  { val i = lastOpened.indexOf(it.url); if (i==-1) Integer.MAX_VALUE else i }
-            SortBy.CREATION -> compareBy(EPubItem::modified)
-            SortBy.SIZE -> compareBy(EPubItem::fileSize)
-        }.run {
-            if (sortOrder == SortOrder.DESC)
-                Collections.reverseOrder(this)
-            else
-                this
-        }.then(compareBy(EPubItem::modified))
-
-        return (list ?: originalList).sortedWith(comparator)
+        fetchData()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BookItem {
@@ -104,19 +93,13 @@ class BookAdapter(
             .inflate(R.layout.list_epub, parent, false) as View
         return BookItem(
             bookItemView,
-            onClickListener = { onClickListener(getItem(it)) },
-            onLongClickListener = { onLongClickListener(getItem(it)) },
+            onClickListener = { onClickListener(getItem(it)!!) },
+            onLongClickListener = { onLongClickListener(getItem(it)!!) },
         )
     }
 
     override fun onBindViewHolder(holder: BookItem, position: Int) {
         holder.bindTo(getItem(position))
-    }
-
-    private enum class RefreshReason {
-        NEW_LIST,
-        CHANGE_SORT,
-        CHANGE_FILTER
     }
 
     companion object {

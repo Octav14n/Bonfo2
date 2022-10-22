@@ -13,6 +13,7 @@ android {
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
+        multiDexEnabled = true
     }
     buildFeatures.viewBinding = true
     buildTypes {
@@ -63,7 +64,7 @@ dependencies {
     def roomVersion = '2.+'
     def preferenceVersion = "1.2.0"
     def archLifecycleVersion = '2.2.0'
-    def materialVersion = '1.4.0'
+    def materialVersion = '1.6.1'
     def coroutines = '1.6.4'
     def workVersion = '2.7.1'
     def folderVersion = '3.3.0'
@@ -106,6 +107,7 @@ dependencies {
 //    implementation "androidx.compose.ui:ui:$composeVersion"
 //    implementation "androidx.compose.material:material:$composeVersion"
 //    implementation "androidx.ui:ui-tooling:$composeVersion"
+    implementation "androidx.multidex:multidex:2.0.1"
 
     // Material design
     implementation "com.google.android.material:material:$materialVersion"

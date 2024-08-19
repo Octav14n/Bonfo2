@@ -12,7 +12,8 @@ import com.karumi.dexter.listener.single.PermissionListener
 import eu.schnuff.bonfo2.R
 
 fun Context.withFilePermission(onGranted: (it: PermissionGrantedResponse?) -> Unit) {
-    Dexter
+    onGranted(null)
+    /*Dexter
         .withContext(this)
         .withPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
         .withListener(object: PermissionListener {
@@ -39,5 +40,5 @@ fun Context.withFilePermission(onGranted: (it: PermissionGrantedResponse?) -> Un
                 }
             }
 
-        }).check()
+        }).check()*/
 }

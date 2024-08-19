@@ -83,7 +83,7 @@ class Setting(context: Context) : SharedPreferences.OnSharedPreferenceChangeList
         changeListeners[preference.string] = onChange
     }
 
-    override fun onSharedPreferenceChanged(p0: SharedPreferences, p1: String) {
+    override fun onSharedPreferenceChanged(p0: SharedPreferences?, p1: String?) {
         changeListeners[p1]?.invoke(this)
     }
 }

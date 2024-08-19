@@ -92,11 +92,11 @@ class BookItem(
     }
 
     override fun onClick(v: View?) {
-        onClickListener(adapterPosition)
+        onClickListener(bindingAdapterPosition)
     }
 
     override fun onLongClick(v: View?): Boolean {
-        onLongClickListener(adapterPosition)
+        onLongClickListener(bindingAdapterPosition)
         return true
     }
 

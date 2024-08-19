@@ -97,7 +97,11 @@ class UpdateService : LifecycleService() {
         // Stop foreground service and remove the notification.
         _progressing.postValue(false)
 
-        stopForeground(true)
+        if (VERSION.SDK_INT >= VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            stopForeground(true)
+        }
         // Stop the foreground service.
         stopSelf(startId)
     }

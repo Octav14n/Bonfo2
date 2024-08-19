@@ -56,8 +56,9 @@ class BookAdapter(
             Pager(
                 PagingConfig(
                     initialLoadSize = 20,
-                    pageSize = 1000,
+                    pageSize = 100,
                     prefetchDistance = 100000,
+                    maxSize = PagingConfig.MAX_SIZE_UNBOUNDED
                 )
             ) {
                 dao.getAll(sortBy, sortOrder)

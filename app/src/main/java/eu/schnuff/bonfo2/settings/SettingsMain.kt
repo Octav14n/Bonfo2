@@ -8,6 +8,8 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.DocumentsContract
 import android.util.Log
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.net.toUri
@@ -45,25 +47,38 @@ class SettingsMain : AppCompatActivity() {
         private lateinit var watchedDirectories: DirectoriesPreference
         private lateinit var setting: Setting
 
+        private val folderSelectResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+                result ->
+            val data = result.data
+            val uri = data?.data
+            if (result.resultCode != RESULT_OK || data == null || uri == null)
+                return@registerForActivityResult
+
+            DocumentFile.fromTreeUri(requireContext(), uri)?.let {
+                val takeFlags: Int = data.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                requireContext().contentResolver.takePersistableUriPermission(uri, takeFlags)
+
+                val childUri = DocumentsContract.buildChildDocumentsUriUsingTree(it.uri, DocumentsContract.getTreeDocumentId(it.uri))
+
+                watchedDirectories.addDirectory(childUri.toString())
+            }
+        }
+
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             setting = Setting(requireContext())
             setPreferencesFromResource(R.xml.root_preferences, rootKey)
             watchedDirectories = findPreference(PREFERENCE.PREFERENCE_WATCHED_DIRECTORIES.string)!!
             watchedDirectories.onAddListener = {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    MaterialDialog(requireContext()).show {
-                        title(R.string.pref_dir_select_title)
-                        message(R.string.pref_dir_select_info)
-                        positiveButton(R.string.pref_dir_select_saf) { openDirDialogSAF() }
-                        negativeButton(R.string.pref_dir_select_native) { openDirDialogNative() }
-                    }
-                } else {
-                    openDirDialogNative()
+                MaterialDialog(requireContext()).show {
+                    title(R.string.pref_dir_select_title)
+                    message(R.string.pref_dir_select_info)
+                    positiveButton(R.string.pref_dir_select_saf) { openDirDialogSAF() }
+                    negativeButton(R.string.pref_dir_select_native) { openDirDialogNative() }
                 }
             }
         }
 
-        @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
         private fun openDirDialogSAF() {
             val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
                 addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
@@ -71,7 +86,7 @@ class SettingsMain : AppCompatActivity() {
                 addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
             }
 
-            startActivityForResult(intent, ACTIVITY_FOLDER_SELECT_ID)
+            folderSelectResultLauncher.launch(intent)
         }
 
         private fun openDirDialogNative() {
@@ -81,24 +96,6 @@ class SettingsMain : AppCompatActivity() {
                         Log.d(DirectoriesPreference.TAG, "folder chooser: $folder")
                         setting.addWatchedDirectory(folder.toUri().toString())
                     }
-                }
-            }
-        }
-
-        @SuppressLint("WrongConstant")
-        @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-        override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-            super.onActivityResult(requestCode, resultCode, data)
-            if (resultCode == RESULT_OK && data != null && data.data != null) when (requestCode) {
-                ACTIVITY_FOLDER_SELECT_ID -> DocumentFile.fromTreeUri(requireContext(), data.data!!)?.let {
-                    val takeFlags: Int = data.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                    val resolver: ContentResolver = requireContext().contentResolver
-                    resolver.takePersistableUriPermission(data.data!!, takeFlags)
-
-                    val childUri = DocumentsContract.buildChildDocumentsUriUsingTree(it.uri, DocumentsContract.getTreeDocumentId(it.uri))
-
-                    watchedDirectories.addDirectory(childUri.toString())
                 }
             }
         }

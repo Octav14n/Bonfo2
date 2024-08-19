@@ -17,10 +17,13 @@ import eu.schnuff.bonfo2.helper.Setting
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Semaphore
+import org.jsoup.Jsoup
+import org.jsoup.safety.Safelist
 import org.w3c.dom.Node
 import org.w3c.dom.NodeList
 import java.io.BufferedInputStream
 import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.FileNotFoundException
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
@@ -99,6 +102,8 @@ object UpdateLogic {
                 Log.w("update", "error:", t)
             }.onCompletion {
                 Log.i("update", "completed.")
+            }.distinctUntilChangedBy {
+                it.uri
             }
                 //.flowOn(Dispatchers.IO)
             .buffer()
@@ -342,10 +347,7 @@ object UpdateLogic {
                 val titlePageText = String(titlePage)
 
                 description =
-                    titlePageText.replace(Regex(".*<body>(.+)</body.*", RegexOption.DOT_MATCHES_ALL), "$1")
-                        .replace(Regex("<br[^>]*>"), "\n")
-                        .replace(Regex("(<[^>]*>)|(^\\W+)|(\\W+$)"), "")
-                        .replace(Regex("\n(\\s*\n)+"), "\n")
+                    Jsoup.clean(Jsoup.parse(titlePageText).body().html(), Safelist.basic()) ?: ""
 
                 val descriptionLines = description.lines()
                 if (descriptionLines.size > DESCRIPTION_MAX_LINES)

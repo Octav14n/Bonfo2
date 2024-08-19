@@ -35,6 +35,7 @@ import eu.schnuff.bonfo2.helper.withFilePermission
 import eu.schnuff.bonfo2.list.BookAdapter
 import eu.schnuff.bonfo2.settings.SettingsMain
 import eu.schnuff.bonfo2.update.UpdateService
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -60,12 +61,16 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
                     2 -> item.webUrl?.run { startActivity(Intent(Intent.ACTION_VIEW, toUri())) }
                     3 -> {
                         item.webUrl ?: return@setItems
-                        val intent = Intent(Intent.ACTION_SEND).apply {
-                            `package` = "eu.schnuff.bofilo"
+                        val intent = Intent("eu.schnuff.bofilo.action.download").apply {
                             putExtra(Intent.EXTRA_TEXT, item.webUrl)
-                            type = "text/plain"
                         }
-                        startActivity(intent)
+                        try {
+                            //startActivity(Intent.createChooser(intent, "Download EPub"))
+                            startActivity(intent)
+                        } catch (e: Exception) {
+                            Log.e(this::class.simpleName, "Can not start download.", e)
+                            Toast.makeText(this@MainActivity, "BoFiLo is not installed.", Toast.LENGTH_SHORT).show()
+                        }
                     }
                     4 -> {
                         //packageManager.queryIntentActivities()
@@ -161,12 +166,14 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
         lifecycleScope.launch {
             launch {
                 adapter.loadStateFlow.collectLatest {
+                    if (firstListObserved) return@collectLatest
                     binding.refresh.isRefreshing = it.refresh is LoadState.Loading
                     if (it.refresh !is LoadState.Loading && adapter.itemCount > 0) {
                         firstListObserved = true
                         binding.listClear.visibility = View.GONE
                         binding.list.visibility = View.VISIBLE
                         (binding.list.layoutManager!! as LinearLayoutManager).scrollToPosition(setting.listScrollIdx)
+                        this.cancel()
                     }
                 }
             }

@@ -27,33 +27,33 @@ agp = "8.5.2"
 
 [libraries]
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
-coreKtx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
-swiperefreshlayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout", version.ref = "swiperefreshlayout" }
+androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+androidx-layout-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
+androidx-layout-swiperefreshlayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout", version.ref = "swiperefreshlayout" }
 junit = { module = "junit:junit", version.ref = "junit" }
 testRunner = { module = "androidx.test:runner", version.ref = "testRunner" }
 espressoCore = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }
-appIntro = { module = "com.github.AppIntro:AppIntro", version.ref = "appIntro" }
-recyclerview = { module = "androidx.recyclerview:recyclerview", version.ref = "recyclerview" }
-fastscroll = { module = "com.simplecityapps:recyclerview-fastscroll", version.ref = "fastscroll" }
-roomRuntime = { module = "androidx.room:room-runtime", version.ref = "room" }
-roomCompiler = { module = "androidx.room:room-compiler", version.ref = "room" }
-roomTesting = { module = "androidx.room:room-testing", version.ref = "room" }
-roomPaging = { module = "androidx.room:room-paging", version.ref = "room" }
-pagingRuntime = { module = "androidx.paging:paging-runtime-ktx", version.ref = "paging" }
-lifecycleExtensions = { module = "androidx.lifecycle:lifecycle-extensions", version.ref = "archLifecycle" }
-lifecycleViewmodelKtx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "viewmodelKtx" }
-coroutinesCore = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
-coroutinesAndroid = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
-multidex = { module = "androidx.multidex:multidex", version.ref = "multidex" }
-material = { module = "com.google.android.material:material", version.ref = "material" }
-preferenceKtx = { module = "androidx.preference:preference-ktx", version.ref = "preference" }
-workRuntimeKtx = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
-dexter = { module = "com.karumi:dexter", version.ref = "dexter" }
-folderCore = { module = "com.afollestad.material-dialogs:core", version.ref = "folder" }
-folderLifecycle = { module = "com.afollestad.material-dialogs:lifecycle", version.ref = "folder" }
-folderFiles = { module = "com.afollestad.material-dialogs:files", version.ref = "folder" }
+com-github-appIntro = { module = "com.github.AppIntro:AppIntro", version.ref = "appIntro" }
+androidx-layout-recyclerview = { module = "androidx.recyclerview:recyclerview", version.ref = "recyclerview" }
+com-simplecityapps-fastscroll = { module = "com.simplecityapps:recyclerview-fastscroll", version.ref = "fastscroll" }
+room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+room-testing = { module = "androidx.room:room-testing", version.ref = "room" }
+room-paging = { module = "androidx.room:room-paging", version.ref = "room" }
+androidx-paging-runtime = { module = "androidx.paging:paging-runtime-ktx", version.ref = "paging" }
+androidx-lifecycle-extensions = { module = "androidx.lifecycle:lifecycle-extensions", version.ref = "archLifecycle" }
+androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "viewmodelKtx" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+androidx-multidex = { module = "androidx.multidex:multidex", version.ref = "multidex" }
+com-google-android-material = { module = "com.google.android.material:material", version.ref = "material" }
+androidx-preference-ktx = { module = "androidx.preference:preference-ktx", version.ref = "preference" }
+androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
+com-karumi-dexter = { module = "com.karumi:dexter", version.ref = "dexter" }
+com-afollestad-materialdialog-core = { module = "com.afollestad.material-dialogs:core", version.ref = "folder" }
+com-afollestad-materialdialog-lifecycle = { module = "com.afollestad.material-dialogs:lifecycle", version.ref = "folder" }
+com-afollestad-materialdialog-files = { module = "com.afollestad.material-dialogs:files", version.ref = "folder" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

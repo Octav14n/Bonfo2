@@ -56,55 +56,55 @@ android {
 dependencies {
     implementation(libs.jsoup)
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
-    implementation(libs.appcompat)
-    implementation(libs.coreKtx)
-    implementation(libs.constraintlayout)
-    implementation(libs.swiperefreshlayout)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.layout.constraintlayout)
+    implementation(libs.androidx.layout.swiperefreshlayout)
     testImplementation(libs.junit)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.espressoCore)
 
     // AppIntro
-    implementation(libs.appIntro)
+    implementation(libs.com.github.appIntro)
 
     // RecyclerView
-    implementation(libs.recyclerview)
-    implementation(libs.fastscroll)
+    implementation(libs.androidx.layout.recyclerview)
+    implementation(libs.com.simplecityapps.fastscroll)
 
     // Room components
-    implementation(libs.roomRuntime)
-    ksp(libs.roomCompiler)
-    androidTestImplementation(libs.roomTesting)
-    implementation(libs.roomPaging)
+    implementation(libs.room.runtime)
+    ksp(libs.room.compiler)
+    androidTestImplementation(libs.room.testing)
+    implementation(libs.room.paging)
 
     // Paging
-    implementation(libs.pagingRuntime)
+    implementation(libs.androidx.paging.runtime)
 
     // Lifecycle components
-    implementation(libs.lifecycleExtensions)
-    implementation(libs.lifecycleViewmodelKtx)
+    implementation(libs.androidx.lifecycle.extensions)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
 
     // Kotlin components
-    api(libs.coroutinesCore)
-    api(libs.coroutinesAndroid)
+    api(libs.kotlinx.coroutines.core)
+    api(libs.kotlinx.coroutines.android)
 
     // Multidex
-    implementation(libs.multidex)
+    implementation(libs.androidx.multidex)
 
     // Material design
-    implementation(libs.material)
+    implementation(libs.com.google.android.material)
 
     // Preference components
-    implementation(libs.preferenceKtx)
+    implementation(libs.androidx.preference.ktx)
 
     // Work service Manager
-    implementation(libs.workRuntimeKtx)
+    implementation(libs.androidx.work.runtime.ktx)
 
     // Permission library
-    implementation(libs.dexter)
+    implementation(libs.com.karumi.dexter)
 
     // Folder library
-    implementation(libs.folderCore)
-    implementation(libs.folderLifecycle)
-    implementation(libs.folderFiles)
+    implementation(libs.com.afollestad.materialdialog.core)
+    implementation(libs.com.afollestad.materialdialog.lifecycle)
+    implementation(libs.com.afollestad.materialdialog.files)
 }

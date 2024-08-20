@@ -1,3 +1,7 @@
+import java.io.FileInputStream
+import java.io.FileNotFoundException
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
@@ -5,15 +9,84 @@ plugins {
 }
 
 android {
+    val versionPropsFile = file("version.properties")
+    var versionBuild: Int
     namespace = "eu.schnuff.bonfo2"
     compileSdk = 34
+
+    /*Setting default value for versionBuild which is the last incremented value stored in the file */
+    if (versionPropsFile.canRead()) {
+        val versionProps = Properties()
+        versionProps.load(FileInputStream(versionPropsFile))
+        versionBuild = (versionProps["VERSION_BUILD"] as String).toInt()
+    } else {
+        throw FileNotFoundException("Could not read version.properties!")
+    }
+    /*Wrapping inside a method avoids auto incrementing on every gradle task run. Now it runs only when we build apk*/
+    val autoIncrementBuildNumber = fun() {
+
+        if (versionPropsFile.canRead()) {
+            val versionProps = Properties()
+            versionProps.load(FileInputStream(versionPropsFile))
+            versionBuild = (versionProps["VERSION_BUILD"] as String).toInt() + 1
+            versionProps["VERSION_BUILD"] = versionBuild.toString()
+            versionProps.store(versionPropsFile.writer(), null)
+        } else {
+            throw FileNotFoundException("Could not read version.properties!")
+        }
+    }
+    // Hook to check if the release/debug task is among the tasks to be executed.
+    //Let's make use of it
+    gradle.taskGraph.whenReady(closureOf<TaskExecutionGraph> {
+        if (this.hasTask(":app:assembleDebug")) {  /* when run debug task */
+            autoIncrementBuildNumber()
+        } else if (this.hasTask(":app:assembleRelease")) { /* when run release task */
+            autoIncrementBuildNumber()
+        }
+    })
+
+    if (hasProperty("releaseStoreFile")) {
+        signingConfigs {
+            create("release") {
+                val releaseStoreFile: String by project
+                val RELEASE_STORE_PASSWORD: String by project
+                val RELEASE_KEY_ALIAS: String by project
+                val RELEASE_KEY_PASSWORD: String by project
+
+                if (!file(releaseStoreFile).exists())
+                    logger.warn("Signing: Release store file does not exist.")
+                if (RELEASE_STORE_PASSWORD == "")
+                    logger.warn("Signing: {} is empty.", "RELEASE_STORE_PASSWORD")
+                if (RELEASE_KEY_ALIAS == "")
+                    logger.warn("Signing: {} is empty.", "RELEASE_KEY_ALIAS")
+                if (RELEASE_KEY_PASSWORD == "")
+                    logger.warn("Signing: {} is empty.", "RELEASE_KEY_PASSWORD")
+                if (!file(releaseStoreFile).exists() || RELEASE_STORE_PASSWORD == "" || RELEASE_KEY_ALIAS == "" || RELEASE_KEY_PASSWORD == "")
+                    throw GradleException("Signing not configured right.")
+
+                storeFile = file(releaseStoreFile)
+                storePassword = RELEASE_STORE_PASSWORD
+                keyAlias = RELEASE_KEY_ALIAS
+                keyPassword = RELEASE_KEY_PASSWORD
+
+                // Optional, specify signing versions used
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = true
+            }
+        }
+        println("Signing file found. Singing config active.")
+    } else
+        println("No Release file found.")
 
     defaultConfig {
         applicationId = "eu.schnuff.bonfo2"
         minSdk = 21
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0"
+        versionName = "$versionCode.${"%04d".format(versionBuild)}"
+        setProperty("archivesBaseName", "Bonfo2_v$versionName")
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
@@ -55,7 +128,6 @@ android {
 
 dependencies {
     implementation(libs.jsoup)
-    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.layout.constraintlayout)

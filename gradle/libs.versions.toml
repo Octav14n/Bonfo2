@@ -6,7 +6,7 @@ material = "1.12.0"
 coroutines = "1.8.1"
 work = "2.9.1"
 folder = "3.3.0"
-jsoup = "1.15.3"
+jsoup = "1.18.1"
 appcompat = "1.7.0"
 coreKtx = "1.13.1"
 constraintlayout = "2.1.4"
@@ -24,6 +24,7 @@ dexter = "6.2.3"
 kotlin = "2.0.10"
 ksp = "2.0.10-1.0.24"
 agp = "8.5.2"
+jsr305 = "3.0.2"
 
 [libraries]
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
@@ -54,6 +55,7 @@ com-karumi-dexter = { module = "com.karumi:dexter", version.ref = "dexter" }
 com-afollestad-materialdialog-core = { module = "com.afollestad.material-dialogs:core", version.ref = "folder" }
 com-afollestad-materialdialog-lifecycle = { module = "com.afollestad.material-dialogs:lifecycle", version.ref = "folder" }
 com-afollestad-materialdialog-files = { module = "com.afollestad.material-dialogs:files", version.ref = "folder" }
+jsr305 = { group = "com.google.code.findbugs", name = "jsr305", version.ref = "jsr305" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

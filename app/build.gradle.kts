@@ -133,6 +133,7 @@ dependencies {
     implementation(libs.androidx.layout.constraintlayout)
     implementation(libs.androidx.layout.swiperefreshlayout)
     testImplementation(libs.junit)
+    testImplementation(libs.jsr305)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.espressoCore)
 

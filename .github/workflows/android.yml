@@ -42,8 +42,12 @@ jobs:
           $RELEASE_KEY_ALIAS \
           $RELEASE_KEY_PASSWORD \
           >> gradle.properties
+      - name: Backup version.properties
+        run: cp app/version.properties ../
       - name: Build APK release
         run: ./gradlew assembleRelease --stacktrace
+      - name: Restore version.properties
+        run: cp -f ../version.properties app/
       - name: Build APK debug
         run: ./gradlew assembleDebug --stacktrace
       - name: Upload Debug APK

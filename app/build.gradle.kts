@@ -99,16 +99,22 @@ android {
     }
 
     buildTypes {
-        debug {
-            applicationIdSuffix = ".debug"
-        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
-                    getDefaultProguardFile("proguard-android-optimize.txt"),
-                    "proguard-rules.pro"
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
             )
+            if (hasProperty("releaseStoreFile"))
+                signingConfig = signingConfigs.getByName("release")
+        }
+        debug {
+            applicationIdSuffix = ".debug"
+            ndk {
+                isMinifyEnabled = false
+                abiFilters += listOf("x86", "x86_64")
+            }
         }
     }
 

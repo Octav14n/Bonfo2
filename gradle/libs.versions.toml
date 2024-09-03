@@ -16,7 +16,7 @@ testRunner = "1.6.2"
 espressoCore = "3.6.1"
 appIntro = "6.1.0"
 recyclerview = "1.3.2"
-fastscroll = "2.0.1"
+fastscroll = "1.3.0"
 paging = "3.3.2"
 viewmodelKtx = "2.8.4"
 multidex = "2.0.1"
@@ -37,7 +37,7 @@ testRunner = { module = "androidx.test:runner", version.ref = "testRunner" }
 espressoCore = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }
 com-github-appIntro = { module = "com.github.AppIntro:AppIntro", version.ref = "appIntro" }
 androidx-layout-recyclerview = { module = "androidx.recyclerview:recyclerview", version.ref = "recyclerview" }
-com-simplecityapps-fastscroll = { module = "com.simplecityapps:recyclerview-fastscroll", version.ref = "fastscroll" }
+me-zhanghai-android-fastscroll = { module = "me.zhanghai.android.fastscroll:library", version.ref = "fastscroll" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 room-testing = { module = "androidx.room:room-testing", version.ref = "room" }

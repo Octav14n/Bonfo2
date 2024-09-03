@@ -38,6 +38,7 @@ import eu.schnuff.bonfo2.update.UpdateService
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import me.zhanghai.android.fastscroll.FastScrollerBuilder
 
 const val REFRESHING_RESET_TIME = 750L
 
@@ -63,6 +64,7 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
                         item.webUrl ?: return@setItems
                         val intent = Intent("eu.schnuff.bofilo.action.download").apply {
                             putExtra(Intent.EXTRA_TEXT, item.webUrl)
+                            setType("text/plain")
                         }
                         try {
                             //startActivity(Intent.createChooser(intent, "Download EPub"))
@@ -155,6 +157,14 @@ class MainActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, 
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
+
+        binding.list.setOnApplyWindowInsetsListener(
+            ScrollingViewOnApplyWindowInsetsListener(
+                binding.list,
+                FastScrollerBuilder(binding.list)
+                    .useMd2Style()
+                    .build())
+        )
 
         applyFilterFromSetting()
         adapter.filter(setting.filter)

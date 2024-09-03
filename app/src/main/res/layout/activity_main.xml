@@ -20,25 +20,20 @@
             android:layout_height="match_parent"
             android:id="@+id/refresh"
             android:layout_below="@+id/toolbar">
-        <com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
+        <androidx.recyclerview.widget.RecyclerView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:id="@+id/list"
                 tools:listitem="@layout/list_epub"
 
                 android:clipToPadding="false"
-                android:paddingLeft="?attr/listPreferredItemPaddingLeft"
-                android:paddingRight="?attr/listPreferredItemPaddingRight"
                 android:paddingStart="?attr/listPreferredItemPaddingLeft"
                 android:paddingEnd="?attr/listPreferredItemPaddingRight"
                 android:paddingTop="?attr/listPreferredItemPaddingStart"
 
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                app:fastScrollPopupBgColor="@color/colorAccent"
-                app:fastScrollPopupTextColor="@color/colorPrimary"
-                app:fastScrollThumbColor="@color/colorAccent" app:fastScrollThumbInactiveColor="@color/colorAccent"
-                app:fastScrollAutoHide="false" android:visibility="gone">
-        </com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView>
+                android:visibility="gone">
+        </androidx.recyclerview.widget.RecyclerView>
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
     <LinearLayout
             android:orientation="vertical"

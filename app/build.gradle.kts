@@ -92,6 +92,12 @@ android {
             useSupportLibrary = true
         }
         multiDexEnabled = true
+
+        ndk {
+            //noinspection ChromeOsAbiSupport
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a")
+        }
+
     }
 
     buildFeatures {
@@ -148,7 +154,7 @@ dependencies {
 
     // RecyclerView
     implementation(libs.androidx.layout.recyclerview)
-    implementation(libs.com.simplecityapps.fastscroll)
+    implementation(libs.me.zhanghai.android.fastscroll)
 
     // Room components
     implementation(libs.room.runtime)
